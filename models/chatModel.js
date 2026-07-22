@@ -52,8 +52,15 @@ async function listMessages({ conversationId, limit = 50, offset = 0 }) {
   return rows;
 }
 
-async function addMessage({ conversationId, senderId, body }) {
+async function addMessage({ conversationId, senderId, body, image }) {
   const db = getDB();
+  if (image) {
+    const [res] = await db.execute(
+      'INSERT INTO messages (conversation_id, sender_id, body, image) VALUES (?,?,?,?)',
+      [conversationId, senderId, body || '', image]
+    );
+    return { id: res.insertId };
+  }
   const [res] = await db.execute(
     'INSERT INTO messages (conversation_id, sender_id, body) VALUES (?,?,?)',
     [conversationId, senderId, body]

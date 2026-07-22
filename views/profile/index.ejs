@@ -114,7 +114,7 @@
   bodyHtml += '    else {';
   bodyHtml += '      pc.innerHTML = posts.map(function(p) {';
   bodyHtml += '        return \'<article class="post" style="padding:12px 0;">\' +';
-  bodyHtml += '          \'<div class="post-head"><div class="avatar avatar-sm"><img src="/uploads/\' + escapeHtml(p.profile_picture || "") + \'" onerror="this.parentNode.textContent=\'\\u{1F464}\'" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" /></div>\' +';
+bodyHtml += '          \'<div class="post-head"><div class="avatar avatar-sm"><img src="/uploads/\' + escapeHtml(p.profile_picture || "") + \'" onerror="this.parentNode.textContent=\'👤\'" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" /></div>\' +';
   bodyHtml += '          \'<div><div class="post-user">\' + escapeHtml(p.fullname || "") + \'</div>\' +';
   bodyHtml += '          \'<div class="post-date">\' + formatDate(p.created_at) + \'</div></div></div>\' +';
   bodyHtml += '          (p.content ? \'<div class="post-content">\' + escapeHtml(p.content) + \'</div>\' : "") +';

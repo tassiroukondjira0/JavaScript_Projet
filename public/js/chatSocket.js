@@ -21,8 +21,16 @@
   const elNewConvoSearch = document.getElementById('newConvoSearch');
   const elNewConvoResults = document.getElementById('newConvoResults');
   const elBtnCloseModal = document.getElementById('btnCloseModal');
+  const elMsgFileInput = document.getElementById('msgFileInput');
+  const elFilePreview = document.getElementById('filePreview');
+  const elFilePreviewName = document.getElementById('filePreviewName');
+  const elBtnClearFile = document.getElementById('btnClearFile');
 
   if (!elConvoList || !elMsgBox || !elMsgInput || !elBtnSend || !elTypingIndicator) return;
+
+  // File upload state
+  let pendingFile = null; // { file, previewUrl }
+  let isUploading = false;
 
   let socket;
   let activeConversationId = null;
@@ -49,6 +57,11 @@
     });
   }
 
+  function isVideoFile(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    return ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(ext);
+  }
+
   function appendMessage(msg) {
     const mine = String(msg.sender_id) === String(userId);
     const bubble = document.createElement('div');
@@ -59,10 +72,21 @@
 
     const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
 
+    let mediaHtml = '';
+    if (msg.image) {
+      const imgSrc = '/uploads/' + msg.image;
+      if (isVideoFile(msg.image)) {
+        mediaHtml = `<video src="${imgSrc}" controls style="max-width:260px;max-height:200px;border-radius:8px;margin-bottom:4px;display:block;"></video>`;
+      } else {
+        mediaHtml = `<img src="${imgSrc}" alt="media" style="max-width:260px;max-height:200px;border-radius:8px;margin-bottom:4px;display:block;cursor:pointer;" onclick="window.open('${imgSrc}','_blank')" />`;
+      }
+    }
+
     bubble.innerHTML = `
       <div style="max-width:75%; background:${mine ? 'var(--primary)' : 'var(--card-2)'}; color:${mine ? '#fff' : 'var(--text)'}; padding:8px 12px; border-radius:${mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px'};">
         ${!mine ? '<div style="font-size:11px; opacity:.7; margin-bottom:2px;">' + escapeHtml(msg.fullname || 'Inconnu') + '</div>' : ''}
-        <div style="white-space:pre-wrap; word-break:break-word;">${escapeHtml(msg.body || msg.text || '')}</div>
+        ${mediaHtml}
+        ${msg.body ? '<div style="white-space:pre-wrap; word-break:break-word;">' + escapeHtml(msg.body) + '</div>' : ''}
         <div style="font-size:10px; opacity:.5; margin-top:4px; text-align:right;">${time}</div>
       </div>
     `;
@@ -194,34 +218,25 @@
     });
   }
 
-  function ensureSocket() {
-    if (socket) return socket;
+  // Flag to ensure we only register chat handlers once on the shared socket
+  let chatHandlersRegistered = false;
 
-    // Use the main socket instance created by main.js (window.mainSocket)
-    // so we don't create a second connection that would overwrite the userId registration.
-    if (window.mainSocket) {
-      socket = window.mainSocket;
-      // If the main socket is not yet connected, wait for it
-      if (!socket.connected) {
-        socket.once('connect', () => {
-          // Re-render convos now that we're connected
-          if (window.__CHAT_CONVOS_CACHE__) {
-            renderConversations(window.__CHAT_CONVOS_CACHE__);
-          }
-        });
-      }
-    } else {
-      // Fallback: only if main.js hasn't created a socket yet
-      socket = window.io({ transports: ['websocket'] });
-      socket.on('connect', () => {
-        socket.emit('register', userId);
-      });
-    }
+  function registerChatHandlers(sock) {
+    if (chatHandlersRegistered) return;
+    chatHandlersRegistered = true;
 
-    // Remove any duplicate chat:message listeners to avoid multiple triggers
-    socket.off('chat:message');
-    socket.on('chat:message', (payload) => {
+    sock.on('chat:message', (payload) => {
       if (!payload) return;
+
+      // Skip if this is an echo from our own message (already appended optimistically)
+      if (String(payload.senderId) === String(userId)) {
+        // Still mark as read
+        if (activeConversationId) {
+          sock.emit('chat:read', { conversationId: payload.conversationId });
+        }
+        return;
+      }
+
       if (!activeConversationId || String(payload.conversationId) !== String(activeConversationId)) {
         // Reload convos to update unread state
         loadConvos();
@@ -233,16 +248,16 @@
         sender_id: payload.senderId,
         fullname: payload.senderId === userId ? 'Moi' : (otherUsersCache[activeConversationId]?.fullname || 'Contact'),
         body: payload.body,
+        image: payload.image || null,
         created_at: new Date().toISOString()
       });
 
       // Mark read
-      socket.emit('chat:read', { conversationId: payload.conversationId });
+      sock.emit('chat:read', { conversationId: payload.conversationId });
     });
 
-    let typingTimeout = null;
-    socket.off('chat:typing');
-    socket.on('chat:typing', (data) => {
+    let typingTimeout2 = null;
+    sock.on('chat:typing', (data) => {
       if (!data) return;
       const { conversationId, fromUserId } = data;
       if (!conversationId) return;
@@ -253,12 +268,52 @@
         String(fromUserId) !== String(userId)
       ) {
         elTypingIndicator.textContent = `En train d'écrire…`;
-        if (typingTimeout) clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
+        if (typingTimeout2) clearTimeout(typingTimeout2);
+        typingTimeout2 = setTimeout(() => {
           elTypingIndicator.textContent = '';
         }, 1500);
       }
     });
+  }
+
+  function ensureSocket() {
+    if (socket) {
+      // Re-register userId in case socket reconnected
+      if (socket.connected) {
+        socket.emit('register', userId);
+      }
+      return socket;
+    }
+
+    // Use the main socket instance created by main.js (window.mainSocket)
+    // so we don't create a second connection that would overwrite the userId registration.
+    if (window.mainSocket) {
+      socket = window.mainSocket;
+      // Re-register userId
+      if (socket.connected) {
+        socket.emit('register', userId);
+      } else {
+        socket.once('connect', () => {
+          socket.emit('register', userId);
+          if (window.__CHAT_CONVOS_CACHE__) {
+            renderConversations(window.__CHAT_CONVOS_CACHE__);
+          }
+        });
+      }
+      // Also re-register on reconnect
+      socket.on('reconnect', () => {
+        socket.emit('register', userId);
+      });
+    } else {
+      // Fallback: only if main.js hasn't created a socket yet
+      socket = window.io({ transports: ['websocket'] });
+      socket.on('connect', () => {
+        socket.emit('register', userId);
+      });
+    }
+
+    // Register chat handlers only once - do NOT use off() to avoid removing other listeners
+    registerChatHandlers(socket);
 
     return socket;
   }
@@ -373,9 +428,31 @@
     elBtnLoadConvos.addEventListener('click', loadConvos);
   }
 
+  // File input handling
+  if (elMsgFileInput && elFilePreview && elFilePreviewName && elBtnClearFile) {
+    elMsgFileInput.addEventListener('change', () => {
+      const file = elMsgFileInput.files?.[0];
+      if (!file) {
+        pendingFile = null;
+        elFilePreview.style.display = 'none';
+        return;
+      }
+      pendingFile = { file, previewUrl: URL.createObjectURL(file) };
+      elFilePreviewName.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' Mo)';
+      elFilePreview.style.display = 'block';
+    });
+
+    elBtnClearFile.addEventListener('click', () => {
+      elMsgFileInput.value = '';
+      if (pendingFile?.previewUrl) URL.revokeObjectURL(pendingFile.previewUrl);
+      pendingFile = null;
+      elFilePreview.style.display = 'none';
+    });
+  }
+
   elBtnSend.addEventListener('click', async () => {
     const body = elMsgInput.value.trim();
-    if (!body) return;
+    if (!body && !pendingFile) return;
     if (!activeConversationId) {
       toast('Choisir une conversation');
       return;
@@ -383,14 +460,61 @@
 
     ensureSocket();
 
+    let imageFilename = null;
+
+    // Upload file if pending
+    if (pendingFile) {
+      if (isUploading) {
+        toast('Téléchargement en cours...');
+        return;
+      }
+      isUploading = true;
+      elBtnSend.disabled = true;
+      elBtnSend.textContent = '...';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', pendingFile.file);
+        const uploadRes = await fetch('/chat/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.ok) {
+          imageFilename = uploadData.filename;
+        } else {
+          toast(uploadData.error || 'Erreur upload');
+          isUploading = false;
+          elBtnSend.disabled = false;
+          elBtnSend.textContent = 'Envoyer';
+          return;
+        }
+      } catch (e) {
+        toast('Erreur upload fichier');
+        isUploading = false;
+        elBtnSend.disabled = false;
+        elBtnSend.textContent = 'Envoyer';
+        return;
+      }
+
+      // Clear pending file
+      if (pendingFile?.previewUrl) URL.revokeObjectURL(pendingFile.previewUrl);
+      pendingFile = null;
+      elMsgFileInput.value = '';
+      elFilePreview.style.display = 'none';
+      isUploading = false;
+      elBtnSend.disabled = false;
+      elBtnSend.textContent = 'Envoyer';
+    }
+
     // Local optimistic
-    appendMessage({ sender_id: userId, fullname: 'Moi', body, created_at: new Date().toISOString() });
+    appendMessage({ sender_id: userId, fullname: 'Moi', body, image: imageFilename, created_at: new Date().toISOString() });
     elMsgInput.value = '';
 
-    socket.emit('chat:send', {
-      conversationId: activeConversationId,
-      body
-    }, async (resp) => {
+    const emitData = { conversationId: activeConversationId, body };
+    if (imageFilename) emitData.image = imageFilename;
+
+    socket.emit('chat:send', emitData, async (resp) => {
       if (!resp || !resp.ok) {
         toast('Envoi impossible');
       }

@@ -67,5 +67,27 @@ async function postMessage(req, res) {
 }
 
 
-module.exports = { getConversations, findOrCreateConversation, getMessages, postMessage };
+async function uploadMedia(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ ok: false, error: 'Aucun fichier envoyé' });
+    }
+    const filename = req.file.filename;
+    const ext = filename.split('.').pop().toLowerCase();
+    const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi'];
+    const isVideo = videoExts.includes(ext);
+    
+    res.json({
+      ok: true,
+      filename,
+      url: '/uploads/' + filename,
+      type: isVideo ? 'video' : 'image'
+    });
+  } catch (err) {
+    console.error('Error uploading media:', err);
+    res.status(500).json({ ok: false, error: 'Erreur lors du téléchargement du fichier' });
+  }
+}
+
+module.exports = { getConversations, findOrCreateConversation, getMessages, postMessage, uploadMedia };
 

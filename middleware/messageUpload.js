@@ -20,23 +20,25 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter (images only for messages)
+// File filter (images + videos for messages)
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const mimeType = allowedTypes.test(file.mimetype);
-  const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const imageTypes = /jpeg|jpg|png|gif|webp/;
+  const videoTypes = /mp4|webm|ogg|mov|avi/;
+  const ext = path.extname(file.originalname).toLowerCase();
+  const isImage = imageTypes.test(file.mimetype) || imageTypes.test(ext);
+  const isVideo = videoTypes.test(file.mimetype) || videoTypes.test(ext);
 
-  if (mimeType && extName) {
+  if (isImage || isVideo) {
     return cb(null, true);
   }
-  cb(new Error('Format de fichier non supporté. Seules les images sont autorisées.'));
+  cb(new Error('Format de fichier non supporté. Images (jpg, png, gif, webp) et vidéos (mp4, webm) autorisées.'));
 };
 
-// Export upload middleware (limit size to 5MB)
+// Export upload middleware (limit size to 20MB for video support)
 const messageUpload = multer({
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 20 * 1024 * 1024 }
 });
 
 module.exports = messageUpload;

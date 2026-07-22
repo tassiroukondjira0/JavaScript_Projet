@@ -21,9 +21,9 @@ function registerChat(io, socketApi) {
       if (!senderId) return cb && cb({ ok: false, error: 'not authenticated' });
 
       try {
-        const { conversationId, otherUserId, body } = data || {};
-        if (!body || String(body).trim().length === 0) {
-          return cb && cb({ ok: false, error: 'body requis' });
+        const { conversationId, otherUserId, body, image } = data || {};
+        if ((!body || String(body).trim().length === 0) && !image) {
+          return cb && cb({ ok: false, error: 'body ou image requis' });
         }
 
         let convId = Number(conversationId);
@@ -32,18 +32,31 @@ function registerChat(io, socketApi) {
         }
         if (!convId) return cb && cb({ ok: false, error: 'conversationId requis' });
 
-        const cleanBody = String(body).trim();
-        await chatModel.addMessage({ conversationId: convId, senderId, body: cleanBody });
+        const cleanBody = body ? String(body).trim() : '';
+        const msgData = { conversationId: convId, senderId, body: cleanBody };
+        if (image) msgData.image = image;
+        
+        await chatModel.addMessage(msgData);
         await chatModel.markConversationRead({ conversationId: convId, userId: senderId });
 
         // Infer other user to deliver socket message
-        const convos = await chatModel.listConversations({ userId: senderId });
-        const convo = convos.find((c) => Number(c.conversation_id) === Number(convId));
-        const other = convo?.other_user_id;
+        // Get other user ID from conversation participants
+        const db = require('../config/db').getDB();
+        const [convRows] = await db.execute(
+          'SELECT user1_id, user2_id FROM conversations WHERE id = ? LIMIT 1',
+          [convId]
+        );
+        let other = null;
+        if (convRows && convRows.length > 0) {
+          other = String(convRows[0].user1_id) === String(senderId) 
+            ? convRows[0].user2_id 
+            : convRows[0].user1_id;
+        }
 
         const payload = { conversationId: convId, senderId, body: cleanBody };
+        if (image) payload.image = image;
 
-        // sender echo
+        // sender echo (used for confirmation, but receiver ignores it)
         socket.emit('chat:message', payload);
 
         // receiver notify

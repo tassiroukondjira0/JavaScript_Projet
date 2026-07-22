@@ -3,6 +3,7 @@
   title: 'Messagerie',
   user,
   currentPath: '/messages',
+  scripts: ['/js/chatSocket.js'],
   body: `
     <h2>Messagerie</h2>
 
@@ -21,8 +22,16 @@
             <p class="muted" style="text-align:center;padding-top:160px;">Sélectionnez une conversation</p>
           </div>
           <div style="display:flex; gap:8px;">
-            <input id="msgInput" class="input" placeholder="Écrire un message..." maxlength="2000" />
+            <input id="msgInput" class="input" placeholder="Écrire un message..." maxlength="2000" style="flex:1;" />
+            <label for="msgFileInput" class="btn" style="cursor:pointer;display:flex;align-items:center;gap:4px;font-size:14px;" title="Joindre une image ou une vidéo">
+              <span>📎</span>
+            </label>
+            <input id="msgFileInput" type="file" accept="image/*,video/mp4,video/webm,video/ogg" style="display:none;" />
             <button class="btn btn-primary" id="btnSend" type="button">Envoyer</button>
+          </div>
+          <div id="filePreview" style="display:none;margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card-2);font-size:13px;">
+            <span id="filePreviewName"></span>
+            <button id="btnClearFile" class="btn btn-sm" type="button" style="margin-left:8px;">✕</button>
           </div>
         </div>
       </div>
@@ -38,7 +47,5 @@
         <button class="btn" id="btnCloseModal" type="button" style="margin-top:12px;">Fermer</button>
       </div>
     </div>
-
-    <script src="/js/chatSocket.js"></script>
   `
 }) %>
