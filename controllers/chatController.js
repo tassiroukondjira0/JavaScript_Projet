@@ -14,6 +14,18 @@ async function findOrCreateConversation(req, res) {
     return res.status(400).json({ ok: false, error: 'Destinataire invalide' });
   }
 
+  // Vérifier que l'utilisateur destinataire existe dans la base de données
+  try {
+    const db = require('../config/db').getDB();
+    const [rows] = await db.execute('SELECT id FROM users WHERE id = ? LIMIT 1', [Number(otherUserId)]);
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ ok: false, error: 'Identifiant incorrect' });
+    }
+  } catch (dbErr) {
+    console.error('Error checking user existence:', dbErr);
+    return res.status(500).json({ ok: false, error: 'Erreur serveur' });
+  }
+
   const conversationId = await chatModel.findOrCreateConversation({ 
     userAId: userId, 
     userBId: otherUserId 

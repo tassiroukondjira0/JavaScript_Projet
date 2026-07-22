@@ -196,12 +196,30 @@
 
   function ensureSocket() {
     if (socket) return socket;
-    socket = window.io({ transports: ['websocket'] });
 
-    socket.on('connect', () => {
-      socket.emit('register', userId);
-    });
+    // Use the main socket instance created by main.js (window.mainSocket)
+    // so we don't create a second connection that would overwrite the userId registration.
+    if (window.mainSocket) {
+      socket = window.mainSocket;
+      // If the main socket is not yet connected, wait for it
+      if (!socket.connected) {
+        socket.once('connect', () => {
+          // Re-render convos now that we're connected
+          if (window.__CHAT_CONVOS_CACHE__) {
+            renderConversations(window.__CHAT_CONVOS_CACHE__);
+          }
+        });
+      }
+    } else {
+      // Fallback: only if main.js hasn't created a socket yet
+      socket = window.io({ transports: ['websocket'] });
+      socket.on('connect', () => {
+        socket.emit('register', userId);
+      });
+    }
 
+    // Remove any duplicate chat:message listeners to avoid multiple triggers
+    socket.off('chat:message');
     socket.on('chat:message', (payload) => {
       if (!payload) return;
       if (!activeConversationId || String(payload.conversationId) !== String(activeConversationId)) {
@@ -223,6 +241,7 @@
     });
 
     let typingTimeout = null;
+    socket.off('chat:typing');
     socket.on('chat:typing', (data) => {
       if (!data) return;
       const { conversationId, fromUserId } = data;

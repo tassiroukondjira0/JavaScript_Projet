@@ -42,13 +42,14 @@ const postComposerController = require('../controllers/postComposerController');
 
 router.get('/new', requireLogin, postComposerController.newPostPage);
 
-// Create post (legacy: single image)
-router.post('/', requireLogin, upload.single('image'), async (req, res) => {
+// Create post (supports single image or video)
+router.post('/', requireLogin, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
   const content = req.body.content;
-  const image = req.file?.filename || null;
+  const image = req.files?.image?.[0]?.filename || null;
+  const video = req.files?.video?.[0]?.filename || null;
   const userId = req.session.user.id;
 
-  const postId = await postModel.createPost({ userId, content, image });
+  const postId = await postModel.createPost({ userId, content, image, video });
 
   await notificationModel.createNotification({
     userId,

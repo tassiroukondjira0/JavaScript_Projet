@@ -75,8 +75,8 @@ router.get('/users/me/stats', requireLogin, userController.getUserStats);
 // ----------------------------------------------------
 // POSTS ROUTES
 // ----------------------------------------------------
-router.post('/posts', requireLogin, upload.single('image'), postController.createPost);
-router.put('/posts/:id', requireLogin, upload.single('image'), postController.updatePost);
+router.post('/posts', requireLogin, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), postController.createPost);
+router.put('/posts/:id', requireLogin, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'video', maxCount: 1 }]), postController.updatePost);
 router.delete('/posts/:id', requireLogin, postController.deletePost);
 router.get('/posts/feed', requireLogin, postController.getFeed);
 router.get('/posts/search', requireLogin, postController.searchPosts);

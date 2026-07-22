@@ -10,7 +10,7 @@ class Friend {
       VALUES (?, ?, 'blocked')
     `;
     const db = getDB();
-    const result = await db.query(sql, [blockerId, blockedId]);
+    const [result] = await db.query(sql, [blockerId, blockedId]);
     return result.insertId;
   }
 
@@ -20,7 +20,7 @@ class Friend {
       WHERE sender_id = ? AND receiver_id = ? AND status = 'blocked'
     `;
     const db = getDB();
-    const result = await db.query(sql, [blockerId, blockedId]);
+    const [result] = await db.query(sql, [blockerId, blockedId]);
     return result.affectedRows > 0;
   }
 
@@ -31,7 +31,7 @@ class Friend {
         AND status = 'blocked'
     `;
     const db = getDB();
-    const rows = await db.query(sql, [userId, targetId, targetId, userId]);
+    const [rows] = await db.query(sql, [userId, targetId, targetId, userId]);
     return rows.length > 0;
   }
 
@@ -50,7 +50,7 @@ class Friend {
       VALUES (?, ?, 'pending')
     `;
     const db = getDB();
-    const result = await db.query(sql, [senderId, receiverId]);
+    const [result] = await db.query(sql, [senderId, receiverId]);
     return result.insertId;
   }
 
@@ -62,7 +62,7 @@ class Friend {
         WHERE sender_id = ? AND receiver_id = ? AND status = 'pending'
       `;
       const db = getDB();
-      const result = await db.query(sql, [senderId, receiverId]);
+      const [result] = await db.query(sql, [senderId, receiverId]);
       return result.affectedRows > 0;
     } else {
       const sql = `
@@ -70,7 +70,7 @@ class Friend {
         WHERE sender_id = ? AND receiver_id = ? AND status = 'pending'
       `;
       const db = getDB();
-      const result = await db.query(sql, [senderId, receiverId]);
+      const [result] = await db.query(sql, [senderId, receiverId]);
       return result.affectedRows > 0;
     }
   }
@@ -82,7 +82,7 @@ class Friend {
          OR (sender_id = ? AND receiver_id = ?)
     `;
     const db = getDB();
-    const result = await db.query(sql, [userOneId, userTwoId, userTwoId, userOneId]);
+    const [result] = await db.query(sql, [userOneId, userTwoId, userTwoId, userOneId]);
     return result.affectedRows > 0;
   }
 
@@ -93,7 +93,7 @@ class Friend {
          OR (sender_id = ? AND receiver_id = ?)
     `;
     const db = getDB();
-    const rows = await db.query(sql, [userOneId, userTwoId, userTwoId, userOneId]);
+    const [rows] = await db.query(sql, [userOneId, userTwoId, userTwoId, userOneId]);
     
     if (rows.length === 0) return 'none';
     
@@ -121,7 +121,8 @@ class Friend {
       ORDER BY u.fullname ASC
     `;
     const db = getDB();
-    return await db.query(sql, [userId, userId]);
+    const [rows] = await db.query(sql, [userId, userId]);
+    return rows;
   }
 
   static async getPendingRequests(userId) {
@@ -133,7 +134,8 @@ class Friend {
       ORDER BY f.created_at DESC
     `;
     const db = getDB();
-    return await db.query(sql, [userId]);
+    const [rows] = await db.query(sql, [userId]);
+    return rows;
   }
 
   static async getSentRequests(userId) {
@@ -145,7 +147,8 @@ class Friend {
       ORDER BY f.created_at DESC
     `;
     const db = getDB();
-    return await db.query(sql, [userId]);
+    const [rows] = await db.query(sql, [userId]);
+    return rows;
   }
 }
 

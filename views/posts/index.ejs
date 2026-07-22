@@ -73,16 +73,25 @@
   bodyHtml += '<textarea name="content" id="composer-content" class="composer-input" rows="3" placeholder="Quoi de neuf' + (user ? ', ' + fullname : '') + ' ?"></textarea>';
   bodyHtml += '</div>';
   bodyHtml += '<div class="composer-row composer-footer">';
-  bodyHtml += '<label class="composer-photo-btn" title="Ajouter une photo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> <span>Photo</span><input type="file" name="image" id="composer-image" accept="image/*" hidden /></label>';
+  bodyHtml += '<label class="composer-media-btn composer-photo-btn" title="Ajouter une photo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> <span>Photo</span><input type="file" name="image" id="composer-image" accept="image/*" hidden /></label>';
+  bodyHtml += '<label class="composer-media-btn composer-video-btn" title="Ajouter une vidéo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg> <span>Vidéo</span><input type="file" name="video" id="composer-video" accept="video/*" hidden /></label>';
   bodyHtml += '<span id="composer-filename" class="muted"></span>';
   bodyHtml += '<button type="submit" class="btn btn-primary">Publier</button>';
   bodyHtml += '</div>';
   bodyHtml += '<div id="composer-preview" class="composer-preview" style="display:none;">';
   bodyHtml += '<img id="composer-preview-img" alt="Aperçu" />';
-  bodyHtml += '<button type="button" id="composer-remove-img" class="composer-remove-img" title="Retirer l\'image">✕</button>';
+  bodyHtml += '<video id="composer-preview-video" style="display:none;width:100%;max-height:360px;border-radius:var(--radius-sm);" controls></video>';
+  bodyHtml += '<button type="button" id="composer-remove-media" class="composer-remove-img" title="Retirer le média">✕</button>';
   bodyHtml += '</div>';
   bodyHtml += '</form>';
   bodyHtml += '</section>';
+
+  // Filter tabs: All / Photos / Videos
+  bodyHtml += '<div class="feed-filter-bar" style="display:flex;gap:8px;margin-bottom:16px;">';
+  bodyHtml += '<button class="feed-filter-btn active" data-filter="all" style="padding:8px 20px;border-radius:20px;border:none;cursor:pointer;font-weight:600;font-size:14px;background:var(--primary);color:#fff;transition:all .15s;">Tout</button>';
+  bodyHtml += '<button class="feed-filter-btn" data-filter="photo" style="padding:8px 20px;border-radius:20px;border:none;cursor:pointer;font-weight:500;font-size:14px;background:var(--bg-2);color:var(--muted);transition:all .15s;">📷 Photos</button>';
+  bodyHtml += '<button class="feed-filter-btn" data-filter="video" style="padding:8px 20px;border-radius:20px;border:none;cursor:pointer;font-weight:500;font-size:14px;background:var(--bg-2);color:var(--muted);transition:all .15s;">🎬 Vidéos</button>';
+  bodyHtml += '</div>';
 
   // Posts feed
   bodyHtml += '<section class="card" id="postsFeed">';
@@ -90,8 +99,12 @@
     bodyHtml += '<p class="muted">Aucune publication pour le moment.</p>';
   } else {
     posts.forEach(p => {
+      // Determine media type for filtering
+      var hasImage = !!(p.image || (p.images && p.images.length > 0));
+      var hasVideo = !!p.video;
+      var mediaType = hasVideo ? 'video' : (hasImage ? 'photo' : 'none');
       var postDate = formatDate(p.created_at);
-      bodyHtml += '<article class="post" data-post-id="' + p.id + '" data-user-id="' + p.user_id + '">';
+      bodyHtml += '<article class="post" data-post-id="' + p.id + '" data-user-id="' + p.user_id + '" data-media-type="' + mediaType + '">';
       bodyHtml += '<div class="post-head">';
       bodyHtml += '<div class="avatar avatar-sm" aria-hidden="true">';
       if (p.profile_picture) {
@@ -116,6 +129,9 @@
         bodyHtml += '</div>';
       } else if (p.image) {
         bodyHtml += '<img class="post-image" src="/uploads/' + p.image + '" alt="image" />';
+      }
+      if (p.video) {
+        bodyHtml += '<video class="post-video" src="/uploads/' + p.video + '" controls style="width:100%;max-height:480px;border-radius:var(--radius);margin-top:8px;background:#000;" onerror="this.parentNode.innerHTML=\'<p class=\\\'muted\\\' style=\\\'padding:16px;text-align:center;\\\'>Erreur de chargement de la vidéo</p>\'"></video>';
       }
       
       // Action buttons bar

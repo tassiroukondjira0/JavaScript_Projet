@@ -1,13 +1,14 @@
 const { getDB } = require('../config/db');
 
-async function create({ userId, content, image, shared_from = null }) {
+async function create({ userId, content, image, video, shared_from = null }) {
   const db = getDB();
   const safeContent = (typeof content === 'string') ? content : '';
   const safeImage = (typeof image === 'string' && image.trim() !== '') ? image : null;
+  const safeVideo = (typeof video === 'string' && video.trim() !== '') ? video : null;
   const safeSharedFrom = (typeof shared_from === 'number') ? shared_from : null;
   const [res] = await db.execute(
-    'INSERT INTO posts (user_id, content, image, shared_from) VALUES (?,?,?,?)',
-    [userId, safeContent, safeImage, safeSharedFrom]
+    'INSERT INTO posts (user_id, content, image, video, shared_from) VALUES (?,?,?,?,?)',
+    [userId, safeContent, safeImage, safeVideo, safeSharedFrom]
   );
   return res.insertId;
 }
@@ -24,12 +25,13 @@ async function findPostOwner(postId) {
   return rows?.[0]?.user_id || null;
 }
 
-async function update(id, { content, image, shared_from }) {
+async function update(id, { content, image, video, shared_from }) {
   const db = getDB();
   const fields = [];
   const values = [];
   if (typeof content !== 'undefined') { fields.push('content = ?'); values.push(content); }
   if (typeof image !== 'undefined') { fields.push('image = ?'); values.push(image); }
+  if (typeof video !== 'undefined') { fields.push('video = ?'); values.push(video); }
   if (typeof shared_from !== 'undefined') { fields.push('shared_from = ?'); values.push(shared_from); }
   if (!fields.length) return;
   values.push(id);

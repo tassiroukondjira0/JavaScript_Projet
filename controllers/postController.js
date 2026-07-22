@@ -12,18 +12,32 @@ exports.createPost = async (req, res) => {
     const { content } = req.body;
     const user_id = currentUserId(req);
 
-    if (!content || content.trim() === '') {
-      if (!req.file) {
-        return res.status(400).json({ error: 'Le contenu de la publication ne peut pas être vide.' });
+    // Accept both single file and multiple fields
+    let image = null;
+    let video = null;
+
+    if (req.file) {
+      // Legacy: single upload (could be image)
+      image = req.file.filename;
+    }
+    if (req.files) {
+      if (req.files.image && req.files.image[0]) {
+        image = req.files.image[0].filename;
+      }
+      if (req.files.video && req.files.video[0]) {
+        video = req.files.video[0].filename;
       }
     }
 
-    const image = req.file ? req.file.filename : null;
+    if ((!content || content.trim() === '') && !image && !video) {
+      return res.status(400).json({ error: 'Le contenu de la publication ne peut pas être vide.' });
+    }
 
     const postId = await Post.create({
       user_id,
       content,
-      image
+      image,
+      video
     });
 
     const newPost = await Post.findById(postId);

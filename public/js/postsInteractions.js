@@ -347,6 +347,123 @@
     }
   }
 
+  // ==================== COMPOSER VIDEO ====================
+  function setupComposerVideo() {
+    const videoInput = document.getElementById('composer-video');
+    const imageInput = document.getElementById('composer-image');
+    const preview = document.getElementById('composer-preview');
+    const previewImg = document.getElementById('composer-preview-img');
+    const previewVideo = document.getElementById('composer-preview-video');
+    const removeBtn = document.getElementById('composer-remove-media');
+    const filenameSpan = document.getElementById('composer-filename');
+
+    function showPreview(file, type) {
+      preview.style.display = 'block';
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (type === 'video') {
+          previewImg.style.display = 'none';
+          previewVideo.style.display = 'block';
+          previewVideo.src = e.target.result;
+        } else {
+          previewVideo.style.display = 'none';
+          previewImg.style.display = 'block';
+          previewImg.src = e.target.result;
+        }
+      };
+      reader.readAsDataURL(file);
+      if (filenameSpan) filenameSpan.textContent = file.name;
+    }
+
+    function clearPreview() {
+      preview.style.display = 'none';
+      previewImg.src = '';
+      previewImg.style.display = 'none';
+      previewVideo.src = '';
+      previewVideo.style.display = 'none';
+      if (filenameSpan) filenameSpan.textContent = '';
+      if (videoInput) videoInput.value = '';
+      if (imageInput) imageInput.value = '';
+    }
+
+    if (videoInput) {
+      videoInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        // Clear image if selected
+        if (imageInput) imageInput.value = '';
+        showPreview(file, 'video');
+      });
+    }
+
+    if (imageInput) {
+      imageInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        // Clear video if selected
+        if (videoInput) videoInput.value = '';
+        showPreview(file, 'image');
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', clearPreview);
+    }
+  }
+
+  // ==================== FEED FILTER ====================
+  function setupFeedFilter() {
+    const filterBtns = document.querySelectorAll('.feed-filter-btn');
+    if (!filterBtns.length) return;
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const filter = btn.dataset.filter;
+
+        // Update active button styles
+        filterBtns.forEach(b => {
+          b.style.background = 'var(--bg-2)';
+          b.style.color = 'var(--muted)';
+          b.style.fontWeight = '500';
+        });
+        btn.style.background = 'var(--primary)';
+        btn.style.color = '#fff';
+        btn.style.fontWeight = '600';
+
+        // Filter posts
+        const posts = document.querySelectorAll('#postsFeed .post');
+        posts.forEach(post => {
+          const mediaType = post.dataset.mediaType || 'none';
+          if (filter === 'all') {
+            post.style.display = '';
+          } else if (filter === 'photo') {
+            post.style.display = mediaType === 'photo' ? '' : 'none';
+          } else if (filter === 'video') {
+            post.style.display = mediaType === 'video' ? '' : 'none';
+          }
+        });
+
+        // Show empty message if no posts visible
+        const visiblePosts = Array.from(posts).filter(p => p.style.display !== 'none');
+        const emptyMsg = document.querySelector('.feed-empty-message');
+        if (visiblePosts.length === 0) {
+          if (!emptyMsg) {
+            const msg = document.createElement('p');
+            msg.className = 'muted feed-empty-message';
+            msg.style.cssText = 'padding:20px;text-align:center;';
+            msg.textContent = filter === 'photo' ? 'Aucune photo pour le moment.' : 'Aucune vidéo pour le moment.';
+            document.getElementById('postsFeed').appendChild(msg);
+          } else {
+            emptyMsg.textContent = filter === 'photo' ? 'Aucune photo pour le moment.' : 'Aucune vidéo pour le moment.';
+            emptyMsg.style.display = '';
+          }
+        } else {
+          if (emptyMsg) emptyMsg.style.display = 'none';
+        }
+      });
+    });
+  }
+
   // ==================== INIT ====================
   document.addEventListener('DOMContentLoaded', () => {
     loadStories();
@@ -356,6 +473,8 @@
     setupShare();
     setupSave();
     setupStoryModal();
+    setupComposerVideo();
+    setupFeedFilter();
 
     // Keyboard navigation for story viewer
     document.addEventListener('keydown', (e) => {

@@ -194,7 +194,7 @@ async function loginStep(req, res) {
         const remaining = Math.ceil((fail.blockedUntil - Date.now()) / 1000);
         return res.status(429).render('auth/login', { error: `Compte bloqué. Réessayez dans ${remaining} secondes.`, language: req.language || 'fr' });
       }
-      return res.status(400).render('auth/login', { error: 'Identifiants invalides', language: req.language || 'fr' });
+      return res.status(400).render('auth/login', { error: 'Identifiant incorrect', language: req.language || 'fr' });
     }
 
     const ok = await bcrypt.compare(password, user.password);
@@ -204,7 +204,7 @@ async function loginStep(req, res) {
         const remaining = Math.ceil((fail.blockedUntil - Date.now()) / 1000);
         return res.status(429).render('auth/login', { error: `Compte bloqué. Réessayez dans ${remaining} secondes.`, language: req.language || 'fr' });
       }
-      return res.status(400).render('auth/login', { error: 'Identifiants invalides', language: req.language || 'fr' });
+      return res.status(400).render('auth/login', { error: 'Identifiant incorrect', language: req.language || 'fr' });
     }
 
     // Succès : réinitialiser les tentatives

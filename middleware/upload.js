@@ -21,11 +21,22 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter (images only)
+// File filter (images only by default)
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const mimeType = allowedTypes.test(file.mimetype);
-  const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const imageTypes = /jpeg|jpg|png|gif|webp/;
+  const videoTypes = /mp4|webm|mov|avi|mkv/;
+
+  if (file.fieldname === 'video') {
+    // Allow video files for the video field
+    const mimeType = videoTypes.test(file.mimetype.split('/')[1]) || videoTypes.test(file.mimetype);
+    const extName = videoTypes.test(path.extname(file.originalname).toLowerCase().replace('.', ''));
+    if (mimeType || extName) return cb(null, true);
+    return cb(new Error('Format de vidéo non supporté. Formats acceptés: MP4, WebM, MOV, AVI, MKV.'));
+  }
+
+  // Default: images only
+  const mimeType = imageTypes.test(file.mimetype);
+  const extName = imageTypes.test(path.extname(file.originalname).toLowerCase());
 
   if (mimeType && extName) {
     return cb(null, true);
@@ -33,11 +44,11 @@ const fileFilter = (req, file, cb) => {
   cb(new Error('Format de fichier non supporté. Seules les images sont autorisées.'));
 };
 
-// Export upload middleware (limit size to 5MB)
+// Export upload middleware (limit size to 5MB for images, 50MB for videos)
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 50 * 1024 * 1024 }
 });
 
 module.exports = upload;

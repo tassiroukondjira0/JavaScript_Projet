@@ -78,6 +78,10 @@ async function run() {
       INDEX idx_entity_id (entity_id)
     ) ENGINE=InnoDB;
 
+    -- Add video column to posts if missing
+    ALTER TABLE posts
+      ADD COLUMN IF NOT EXISTS video VARCHAR(255) NULL;
+
     SET SESSION foreign_key_checks = 1;
   `;
 

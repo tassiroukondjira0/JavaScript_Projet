@@ -32,6 +32,11 @@
     <main class="auth-form-side">
       <section class="card auth-card">
         <h2><%= t('login') || 'Connexion' %></h2>
+        <% if (typeof error !== 'undefined' && error) { %>
+          <div class="alert alert-error" style="background:var(--danger-bg);color:var(--danger);padding:10px 14px;border-radius:8px;margin-bottom:16px;font-size:14px;text-align:center;">
+            <%= error %>
+          </div>
+        <% } %>
         <form method="POST" action="/auth/login" class="form">
           <div class="form-group">
             <label for="email">Adresse e-mail</label>
