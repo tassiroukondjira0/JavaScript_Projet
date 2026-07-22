@@ -1,0 +1,121 @@
+<% const currentPath = '/profile/edit'; %>
+<% const title = 'Modifier le profil'; %>
+<% 
+  const tAny = (key) => (typeof t === 'function' ? t(key) : key);
+  const editProfileTitleText = tAny("editProfileTitle");
+  const profilePictureLabelText = tAny("profilePictureLabel");
+  const coverPhotoLabelText = tAny("coverPhotoLabel");
+  const bioLabelText = tAny("bioLabel");
+  const bioPlaceholderText = tAny("bioPlaceholder");
+  const establishmentLabelText = tAny("establishmentLabel");
+  const establishmentPlaceholderText = tAny("establishmentPlaceholder");
+  const locationLabelText = tAny("locationLabel");
+  const locationPlaceholderText = tAny("locationPlaceholder");
+  const saveProfileChangesText = tAny("saveProfileChanges");
+
+  const pUser = profileUser || user || null;
+  const connectedUser = user || viewer || null;
+
+  let bodyHtml = '<main><section class="card">';
+  bodyHtml += '<div class="profile-edit-header">';
+  bodyHtml += '<a href="/profile/' + (connectedUser ? connectedUser.id : '') + '" class="btn btn-ghost">&larr; Retour au profil</a>';
+  bodyHtml += '<h2>' + editProfileTitleText + '</h2>';
+  bodyHtml += '</div>';
+
+  if (pUser) {
+    bodyHtml += '<div class="profile-edit-cover">';
+    if (pUser.cover_photo) {
+      bodyHtml += '<img src="/uploads/' + pUser.cover_photo + '" alt="Cover" class="cover-preview" />';
+    } else {
+      bodyHtml += '<div class="cover-placeholder">Photo de couverture</div>';
+    }
+    bodyHtml += '</div>';
+
+    bodyHtml += '<div class="profile-edit-avatar">';
+    bodyHtml += '<img id="edit-avatar-img" src="' + (pUser.profile_picture ? '/uploads/' + pUser.profile_picture : '/images/default-avatar.svg') + '" alt="avatar" class="avatar avatar-lg" />';
+    bodyHtml += (pUser.profile_picture ? '<button type="button" id="btn-delete-avatar" class="btn btn-ghost btn-sm" style="display:block;margin-top:8px;color:var(--danger);">🗑️ Supprimer la photo de profil</button>' : '');
+    bodyHtml += '</div>';
+
+    bodyHtml += '<form id="profileEditForm" class="profile-form" method="POST" action="/profile" enctype="multipart/form-data">';
+    
+    bodyHtml += '<div class="form-group">';
+    bodyHtml += '<label>' + profilePictureLabelText + '</label>';
+    bodyHtml += '<input type="file" name="avatar" accept="image/*" class="input-file" />';
+    bodyHtml += '</div>';
+
+    bodyHtml += '<div class="form-group">';
+    bodyHtml += '<label>' + coverPhotoLabelText + '</label>';
+    bodyHtml += '<input type="file" name="cover" accept="image/*" class="input-file" />';
+    bodyHtml += '</div>';
+
+    bodyHtml += '<div class="form-group">';
+    bodyHtml += '<label>' + bioLabelText + '</label>';
+    bodyHtml += '<textarea name="bio" class="input" placeholder="' + bioPlaceholderText + '" rows="4">' + (pUser.bio || '') + '</textarea>';
+    bodyHtml += '</div>';
+
+    bodyHtml += '<div class="form-group">';
+    bodyHtml += '<label>' + establishmentLabelText + '</label>';
+    bodyHtml += '<input name="establishment" class="input" value="' + (pUser.establishment || '') + '" placeholder="' + establishmentPlaceholderText + '" />';
+    bodyHtml += '</div>';
+
+    bodyHtml += '<div class="form-group">';
+    bodyHtml += '<label>' + locationLabelText + '</label>';
+    bodyHtml += '<input name="location" class="input" value="' + (pUser.location || '') + '" placeholder="' + locationPlaceholderText + '" />';
+    bodyHtml += '</div>';
+
+    bodyHtml += '<div class="form-group">';
+    bodyHtml += '<label>Passions</label>';
+    bodyHtml += '<textarea name="passions" class="input" placeholder="Ex: Musique, Sport, Technologie" rows="3">' + (pUser.passions || '') + '</textarea>';
+    bodyHtml += '</div>';
+
+    bodyHtml += '<div class="form-actions">';
+    bodyHtml += '<button class="btn btn-primary" type="submit">' + saveProfileChangesText + '</button>';
+    bodyHtml += '</div>';
+
+    bodyHtml += '</form>';
+  }
+
+  bodyHtml += '</section></main>';
+
+  bodyHtml += '<style>';
+  bodyHtml += '.profile-edit-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }';
+  bodyHtml += '.profile-edit-header h2 { margin: 0; }';
+  bodyHtml += '.profile-edit-cover { width: 100%; height: 200px; border-radius: 12px; overflow: hidden; margin-bottom: -48px; position: relative; }';
+  bodyHtml += '.profile-edit-cover img { width: 100%; height: 100%; object-fit: cover; }';
+  bodyHtml += '.cover-placeholder { width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary-700), var(--accent)); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2rem; }';
+  bodyHtml += '.profile-edit-avatar { position: relative; z-index: 2; margin-left: 24px; }';
+  bodyHtml += '.profile-edit-avatar .avatar-lg { width: 96px; height: 96px; border-radius: 50%; border: 3px solid var(--card); object-fit: cover; }';
+  bodyHtml += '.profile-form { margin-top: 24px; }';
+  bodyHtml += '.form-group { margin-bottom: 16px; }';
+  bodyHtml += '.form-group label { display: block; color: var(--muted); font-size: 13px; margin-bottom: 6px; font-weight: 500; }';
+  bodyHtml += '.form-group .input { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: transparent; color: var(--text); font-family: inherit; font-size: 14px; }';
+  bodyHtml += '.form-group .input:focus { outline: none; border-color: var(--primary); }';
+  bodyHtml += '.form-group textarea.input { resize: vertical; min-height: 80px; }';
+  bodyHtml += '.form-group .input-file { padding: 8px 0; }';
+  bodyHtml += '.form-actions { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }';
+  bodyHtml += '.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 14px; }';
+  bodyHtml += '.btn-ghost:hover { background: var(--hover-bg); }';
+  bodyHtml += '</style>';
+
+  bodyHtml += '<script>';
+  bodyHtml += 'document.addEventListener("DOMContentLoaded", function() {';
+  bodyHtml += '  var delBtn = document.getElementById("btn-delete-avatar");';
+  bodyHtml += '  if (delBtn) {';
+  bodyHtml += '    delBtn.addEventListener("click", async function() {';
+  bodyHtml += '      if (!confirm("Êtes-vous sûr de vouloir supprimer votre photo de profil ?")) return;';
+  bodyHtml += '      try {';
+  bodyHtml += '        var r = await fetch("/api/profile/avatar/delete", { method: "POST" });';
+  bodyHtml += '        var data = await r.json();';
+  bodyHtml += '        if (data.ok) {';
+  bodyHtml += '          document.getElementById("edit-avatar-img").src = "/images/default-avatar.svg";';
+  bodyHtml += '          delBtn.remove();';
+  bodyHtml += '        } else {';
+  bodyHtml += '          alert(data.error || "Erreur");';
+  bodyHtml += '        }';
+  bodyHtml += '      } catch(e) { alert("Erreur réseau"); }';
+  bodyHtml += '    });';
+  bodyHtml += '  }';
+  bodyHtml += '});';
+  bodyHtml += '</script>';
+%>
+<%- include('../partials/appShell.ejs', { language: language || 'fr', title, user, currentPath, body: bodyHtml }) %>

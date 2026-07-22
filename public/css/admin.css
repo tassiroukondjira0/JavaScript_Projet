@@ -1,0 +1,129 @@
+/* Djokko — Administration : design du tableau de bord raffiné */
+
+.admin-top{background:color-mix(in srgb, var(--card) 88%, transparent);}
+.brand-tag{
+  margin-left:10px;
+  font-size:12px;
+  font-weight:600;
+  color:var(--primary);
+  background:rgba(var(--primary-rgb),.10);
+  padding:3px 10px;
+  border-radius:999px;
+}
+
+.admin-container{max-width:1100px;margin:0 auto;padding:0 16px;}
+.admin-head{margin:8px 0 18px;}
+.admin-head h2{font-size:1.8rem;margin:0 0 4px;letter-spacing:-.3px;}
+
+/* Grille de cartes statistiques */
+.stat-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
+  gap:16px;
+}
+.stat-card{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:20px;
+  border-radius:16px;
+  background:color-mix(in srgb, var(--card) 90%, transparent);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow-sm);
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.stat-card:hover{
+  transform:translateY(-4px);
+  box-shadow:var(--shadow);
+  border-color:rgba(var(--primary-rgb),.12);
+}
+.stat-icon{
+  width:48px;height:48px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  background:rgba(var(--primary-rgb),.10);
+}
+.stat-users .stat-icon{background:rgba(var(--primary-rgb),.12);}
+.stat-posts .stat-icon{background:rgba(var(--violet-rgb),.14);}
+.stat-comments .stat-icon{background:rgba(var(--success-rgb),.14);}
+.stat-reports .stat-icon{background:rgba(var(--danger-rgb),.14);}
+.stat-notif .stat-icon{background:rgba(var(--warning-rgb),.14);}
+.stat-value{font-size:1.7rem;font-weight:800;line-height:1;letter-spacing:-.5px;}
+.stat-label{font-size:13px;color:var(--muted);margin-top:4px;}
+
+/* Colonnes */
+.admin-cols{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  margin-top:20px;
+}
+@media (max-width: 760px){ .admin-cols{grid-template-columns:1fr;} }
+.admin-card{
+  background:color-mix(in srgb, var(--card) 88%, transparent);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+  box-shadow:var(--shadow-sm);
+  transition:border-color .2s ease;
+}
+.admin-card:hover{border-color:rgba(var(--primary-rgb),.10);}
+.admin-card h3{margin:0 0 16px;font-size:1.05rem;}
+
+/* Donut chart */
+.donut-wrap{position:relative;display:flex;justify-content:center;align-items:center;margin-bottom:14px;}
+.donut{transform:rotate(-90deg);}
+.donut-track{
+  fill:none;
+  stroke:var(--border);
+  stroke-width:14;
+}
+.donut-seg{
+  fill:none;
+  stroke-width:14;
+  stroke-linecap:butt;
+  transition:stroke-dasharray .6s ease, stroke-dashoffset .6s ease;
+}
+.donut-center{
+  position:absolute;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.donut-total{font-size:1.6rem;font-weight:800;letter-spacing:-.5px;}
+.donut-center .muted{font-size:12px;}
+
+.legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+.legend-item{display:flex;align-items:center;gap:10px;font-size:14px;}
+.legend-swatch{width:12px;height:12px;border-radius:3px;flex:0 0 auto;}
+.legend-label{flex:1;}
+.legend-val{font-weight:700;}
+
+/* Bar chart */
+.bars{display:flex;flex-direction:column;gap:12px;}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:13px;}
+.bar-label{width:110px;color:var(--muted);flex:0 0 auto;}
+.bar-track{flex:1;height:10px;border-radius:999px;background:var(--veil-strong);overflow:hidden;}
+.bar-fill{display:block;height:100%;border-radius:999px;transition:width .6s ease;}
+.bar-val{width:48px;text-align:right;font-weight:700;flex:0 0 auto;}
+
+/* Activity list */
+.activity-list{list-style:none;margin:0;padding:0;}
+.activity-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid var(--border);
+  transition:background .15s ease;
+}
+.activity-item:last-child{border-bottom:none;}
+.activity-item:hover{background:var(--veil);padding-left:8px;border-radius:8px;}
+.activity-dot{
+  width:9px;height:9px;border-radius:50%;
+  background:var(--primary);
+  box-shadow:0 0 0 4px rgba(var(--primary-rgb),.16);
+  flex:0 0 auto;
+}
+.activity-time{font-size:12px;margin-left:auto;color:var(--muted);}

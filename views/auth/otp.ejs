@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= t('otpTitle') || 'OTP — Djokko' %></title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <script>
+    // Empêche public/js/auth.js (flow /api/auth/*) d’interférer avec le flow EJS /auth/otp?purpose=...
+    window.__DJOKKO_DISABLE_AUTH_JS__ = true;
+  </script>
+  <header class="top">
+
+    <div class="brand"><div class="logo">Djokko</div></div>
+    <div class="actions"><a class="btn" href="/">🏠</a></div>
+  </header>
+
+  <main class="container">
+<section class="card">
+      <h2><%= t('otpTitleH2') || 'Vérification OTP' %></h2>
+<p class="muted"><%= t('otpPurposeLabel') || 'Motif' %> : <strong><%= purpose %></strong></p>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <p class="muted" style="color:var(--danger)"><%= error %></p>
+      <% } %>
+
+      <form method="POST" action="/auth/otp?purpose=<%= purpose %>">
+<label><%= t('otpCodeLabel') || 'Code OTP' %></label>
+        <input name="code" inputmode="numeric" pattern="[0-9]*" required />
+<button class="btn btn-primary" type="submit"><%= t('otpValidateButton') || 'Valider' %></button>
+      </form>
+
+      <% if (typeof showCode !== 'undefined' && showCode) { %>
+        <p class="muted">
+          <strong>Mode test local :</strong> le SMS n’a pas été envoyé (Sendchamp non configuré).
+          Votre code de vérification est : <code><%= code %></code>
+        </p>
+      <% } else { %>
+        <p class="muted">
+          Un code de vérification a été envoyé par SMS à votre numéro de téléphone.
+        </p>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>

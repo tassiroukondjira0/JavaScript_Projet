@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Posts — Admin</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><div class="logo">Djokko</div></div>
+    <div class="actions">
+      <a class="btn" href="/admin/dashboard">Dashboard</a>
+      <a class="btn" href="/admin/crud/users">Utilisateurs</a>
+      <a class="btn" href="/admin/crud/reports">Signalements</a>
+    </div>
+  </header>
+  <main class="container">
+    <section class="card">
+      <h2>Posts</h2>
+      <table style="width:100%">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Auteur</th>
+            <th>Contenu</th>
+            <th>Créé le</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% posts.forEach(p => { %>
+            <tr>
+              <td><%= p.id %></td>
+              <td><%= p.fullname %></td>
+              <td><%= p.content ? p.content.slice(0, 140) : '' %></td>
+              <td><%= p.created_at %></td>
+              <td>
+                <form method="POST" action="/admin/crud/posts/<%= p.id %>/delete" onsubmit="return confirm('Supprimer ?');">
+                  <button class="btn btn-primary" type="submit">Supprimer</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

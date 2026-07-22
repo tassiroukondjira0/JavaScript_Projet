@@ -1,0 +1,59 @@
+<% const currentPath = '/posts/new'; %>
+<% const title = 'Créer une publication — Djokko'; %>
+<%
+  let bodyHtml = '<main><section class="card">';
+  bodyHtml += '<h2>Publier des photos</h2>';
+  bodyHtml += '<form id="post-new-form" method="POST" action="/posts/new" enctype="multipart/form-data">';
+  bodyHtml += '<div class="field"><label>Description</label><textarea name="content" id="post-content" class="composer-input" rows="4" placeholder="Écrivez une description..."></textarea></div>';
+  bodyHtml += '<div class="field"><label>Photos</label>';
+  bodyHtml += '<label class="composer-photo-btn" title="Ajouter des photos">📷 <span>Sélectionner</span><input type="file" name="images" id="post-images" accept="image/*" multiple hidden /></label>';
+  bodyHtml += '<div id="post-files" class="muted" style="margin-top:8px;"></div>';
+  bodyHtml += '<div id="post-preview" class="composer-preview" style="display:none;">';
+  bodyHtml += '<div id="post-preview-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;align-items:start;"></div>';
+  bodyHtml += '<button type="button" id="post-remove-images" class="btn" style="margin-top:12px;">Retirer toutes les photos</button>';
+  bodyHtml += '</div></div>';
+  bodyHtml += '<div style="margin-top:14px;display:flex;gap:10px;align-items:center;"><button id="post-submit" type="submit" class="btn btn-primary">Publier</button><span id="post-submit-status" class="muted" style="display:none;">Téléversement...</span></div>';
+  bodyHtml += '<div class="muted" style="margin-top:10px;font-size:13px;">Remarque : au moins 1 photo est requise.</div>';
+  bodyHtml += '</form></section></main>';
+  bodyHtml += '<script>';
+  bodyHtml += 'var input = document.getElementById("post-images");';
+  bodyHtml += 'var filesLabel = document.getElementById("post-files");';
+  bodyHtml += 'var preview = document.getElementById("post-preview");';
+  bodyHtml += 'var grid = document.getElementById("post-preview-grid");';
+  bodyHtml += 'var removeBtn = document.getElementById("post-remove-images");';
+  bodyHtml += 'var form = document.getElementById("post-new-form");';
+  bodyHtml += 'var submitBtn = document.getElementById("post-submit");';
+  bodyHtml += 'var status = document.getElementById("post-submit-status");';
+  bodyHtml += 'function renderPreview() {';
+  bodyHtml += 'var files = input.files ? Array.prototype.slice.call(input.files) : [];';
+  bodyHtml += 'filesLabel.textContent = files.length ? files.length + " photo(s) sélectionnée(s)" : "";';
+  bodyHtml += 'if (!files.length) { preview.style.display = "none"; grid.innerHTML = ""; return; }';
+  bodyHtml += 'preview.style.display = "block"; grid.innerHTML = "";';
+  bodyHtml += 'files.forEach(function(file, idx) {';
+  bodyHtml += 'var reader = new FileReader();';
+  bodyHtml += 'reader.onload = function(e) {';
+  bodyHtml += 'var wrap = document.createElement("div"); wrap.style.position = "relative";';
+  bodyHtml += 'wrap.innerHTML = "<img src=\\"" + e.target.result + "\\" alt=\\"aperçu " + (idx+1) + "\\" style=\\"width:100%;height:140px;object-fit:cover;border-radius:10px;\\" />";';
+  bodyHtml += 'grid.appendChild(wrap);';
+  bodyHtml += '};';
+  bodyHtml += 'reader.readAsDataURL(file);';
+  bodyHtml += '});';
+  bodyHtml += '}';
+  bodyHtml += 'if (input) input.addEventListener("change", renderPreview);';
+  bodyHtml += 'if (removeBtn) {';
+  bodyHtml += 'removeBtn.addEventListener("click", function() {';
+  bodyHtml += 'input.value = "";';
+  bodyHtml += 'filesLabel.textContent = "";';
+  bodyHtml += 'preview.style.display = "none";';
+  bodyHtml += 'grid.innerHTML = "";';
+  bodyHtml += '});';
+  bodyHtml += '}';
+  bodyHtml += 'if (form && submitBtn && status) {';
+  bodyHtml += 'form.addEventListener("submit", function() {';
+  bodyHtml += 'submitBtn.disabled = true;';
+  bodyHtml += 'status.style.display = "inline";';
+  bodyHtml += '});';
+  bodyHtml += '}';
+  bodyHtml += '</script>';
+%>
+<%- include('partials/appShell', { language: language || 'fr', title, user, currentPath, body: bodyHtml }) %>

@@ -1,0 +1,47 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Publications — Djokko</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/notificationsSocket.js"></script>
+</head>
+<body data-user-id="15">
+  <div id="realtimeNotificationToast" class="toast muted"></div>
+
+  <!-- Pass user data to main.js -->
+  <script>
+    window.__DJOKKO_USER__ = {"id":15,"fullname":"loginusr1@test.com","email":"loginusr1@test.com","username":"","role":"USER","profile_picture":null,"preferred_theme":"dark","preferred_language":"fr","date_of_birth":null,"phone":null,"country_code":null,"country_flag":null,"bio":null,"is_admin":false,"is_super_admin":false,"is_suspended":false,"created_at":null};
+  </script>
+
+  <!-- Header Placeholder (rendered by main.js) -->
+  <div id="header-placeholder"></div>
+
+  <div class="app-container">
+
+  <main class="container">
+    <h2>Fil d’actualité</h2>
+    
+      <p class="muted">Bienvenue, <strong>loginusr1@test.com</strong> 👋</p>
+    
+
+    <section class="card">
+      
+        <p class="muted">Aucune publication pour le moment.</p>
+      
+    </section>
+  </main>
+
+  <!-- Right Sidebar Placeholder (rendered by main.js) -->
+  <div id="right-sidebar-placeholder"></div>
+
+  <!-- Welcome Tour (affiché après l'inscription tant que l'utilisateur n'a pas de publication) -->
+  
+
+  </div><!-- /.app-container -->
+
+  <script src="/js/main.js"></script>
+</body>
+</html>

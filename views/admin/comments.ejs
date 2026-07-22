@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commentaires — Admin</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><div class="logo">Djokko</div></div>
+    <div class="actions">
+      <a class="btn" href="/admin/dashboard">Dashboard</a>
+      <a class="btn" href="/admin/crud/users">Utilisateurs</a>
+      <a class="btn" href="/admin/crud/posts">Posts</a>
+      <a class="btn" href="/admin/crud/reports">Signalements</a>
+    </div>
+  </header>
+  <main class="container">
+    <section class="card">
+      <h2>Commentaires</h2>
+      <table style="width:100%">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Auteur</th>
+            <th>Publication</th>
+            <th>Contenu</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% comments.forEach(c => { %>
+            <tr>
+              <td><%= c.id %></td>
+              <td><%= c.user_name %></td>
+              <td><%= (c.post_content || '').slice(0, 60) %></td>
+              <td><%= c.content.slice(0, 120) %></td>
+              <td><%= c.created_at %></td>
+              <td>
+                <form method="POST" action="/admin/crud/comments/<%= c.id %>/delete" onsubmit="return confirm('Supprimer ?');">
+                  <button class="btn btn-primary" type="submit">Supprimer</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

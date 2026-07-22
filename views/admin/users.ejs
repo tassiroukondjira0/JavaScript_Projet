@@ -1,0 +1,111 @@
+<% const currentPath = '/admin'; %>
+<% const title = 'Gestion des utilisateurs — Admin'; %>
+<%
+  let bodyHtml = '<main class="admin-shell">';
+  bodyHtml += '<div class="admin-head">';
+  bodyHtml += '<h2>Gestion des utilisateurs</h2>';
+  bodyHtml += '<p class="muted">Gérer les utilisateurs : bannir, suspendre, supprimer ou modifier les rôles.</p>';
+  bodyHtml += '<div class="admin-nav" style="display:flex;gap:8px;margin-top:12px;">';
+  bodyHtml += '<a href="/admin" class="btn btn-ghost">Tableau de bord</a>';
+  bodyHtml += '<a href="/admin/crud/posts" class="btn btn-ghost">Publications</a>';
+  bodyHtml += '<a href="/admin/crud/reports" class="btn btn-ghost">Signalements</a>';
+  bodyHtml += '<a href="/admin/crud/comments" class="btn btn-ghost">Commentaires</a>';
+  bodyHtml += '</div>';
+  bodyHtml += '</div>';
+
+  bodyHtml += '<section class="card" style="margin-top:16px;">';
+  bodyHtml += '<table style="width:100%;border-collapse:collapse;">';
+  bodyHtml += '<thead><tr>';
+  bodyHtml += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">ID</th>';
+  bodyHtml += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Nom</th>';
+  bodyHtml += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Email</th>';
+  bodyHtml += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Rôle</th>';
+  bodyHtml += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Statut</th>';
+  bodyHtml += '<th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Actions</th>';
+  bodyHtml += '</tr></thead><tbody>';
+
+  if (users && users.length) {
+    users.forEach(u => {
+      const isSuperAdmin = u.role === 'SUPER_ADMIN';
+      const isAdmin = u.role === 'ADMIN' || isSuperAdmin;
+      const status = u.status || 'active';
+      const statusLabel = status === 'suspended' ? 'Suspendu' : status === 'banned' ? 'Banni' : 'Actif';
+      const statusColor = status === 'suspended' ? '#F2A93B' : status === 'banned' ? '#E5484D' : '#31a24c';
+
+      bodyHtml += '<tr>';
+      bodyHtml += '<td style="padding:10px 8px;border-bottom:1px solid var(--border);">' + u.id + '</td>';
+      bodyHtml += '<td style="padding:10px 8px;border-bottom:1px solid var(--border);"><strong>' + (u.fullname || 'Inconnu') + '</strong></td>';
+      bodyHtml += '<td style="padding:10px 8px;border-bottom:1px solid var(--border);">' + (u.email || '') + '</td>';
+      bodyHtml += '<td style="padding:10px 8px;border-bottom:1px solid var(--border);">';
+      bodyHtml += '<form method="POST" action="/admin/crud/users/' + u.id + '/role" style="display:inline-flex;gap:4px;align-items:center;">';
+      bodyHtml += '<select name="role" class="input" style="padding:4px 8px;font-size:12px;width:auto;">';
+      ['USER','ADMIN','SUPER_ADMIN'].forEach(r => {
+        bodyHtml += '<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + r + '</option>';
+      });
+      bodyHtml += '</select>';
+      bodyHtml += '<button class="btn btn-sm" type="submit" style="padding:4px 8px;font-size:12px;">OK</button>';
+      bodyHtml += '</form>';
+      bodyHtml += '</td>';
+      bodyHtml += '<td style="padding:10px 8px;border-bottom:1px solid var(--border);"><span style="color:' + statusColor + ';font-weight:500;">' + statusLabel + '</span></td>';
+      bodyHtml += '<td style="padding:10px 8px;border-bottom:1px solid var(--border);">';
+      
+      if (!isSuperAdmin) {
+        if (status === 'active') {
+          bodyHtml += '<button class="btn btn-sm suspend-btn" data-id="' + u.id + '" style="padding:4px 8px;font-size:12px;background:#F2A93B;color:#000;border:none;border-radius:6px;cursor:pointer;margin-right:4px;">Suspendre</button>';
+        } else {
+          bodyHtml += '<button class="btn btn-sm reactivate-btn" data-id="' + u.id + '" style="padding:4px 8px;font-size:12px;background:#31a24c;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-right:4px;">Réactiver</button>';
+        }
+        bodyHtml += '<button class="btn btn-sm delete-btn" data-id="' + u.id + '" data-name="' + (u.fullname || '') + '" style="padding:4px 8px;font-size:12px;background:#E5484D;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-right:4px;">Supprimer</button>';
+      } else {
+        bodyHtml += '<span class="muted" style="font-size:12px;">Super Admin</span>';
+      }
+      
+      bodyHtml += '</td>';
+      bodyHtml += '</tr>';
+    });
+  } else {
+    bodyHtml += '<tr><td colspan="6" style="padding:20px;text-align:center;" class="muted">Aucun utilisateur trouvé.</td></tr>';
+  }
+
+  bodyHtml += '</tbody></table>';
+  bodyHtml += '</section>';
+  bodyHtml += '</main>';
+
+  bodyHtml += '<script>';
+  bodyHtml += 'document.querySelectorAll(".suspend-btn").forEach(btn => {';
+  bodyHtml += 'btn.addEventListener("click", async () => {';
+  bodyHtml += 'if (!confirm("Suspendre cet utilisateur ?")) return;';
+  bodyHtml += 'try {';
+  bodyHtml += 'const r = await fetch("/api/admin/users/" + btn.dataset.id + "/suspend", { method: "PUT" });';
+  bodyHtml += 'if (r.ok) window.location.reload();';
+  bodyHtml += 'else alert("Erreur");';
+  bodyHtml += '} catch(e) { alert("Erreur"); }';
+  bodyHtml += '});';
+  bodyHtml += '});';
+
+  bodyHtml += 'document.querySelectorAll(".reactivate-btn").forEach(btn => {';
+  bodyHtml += 'btn.addEventListener("click", async () => {';
+  bodyHtml += 'if (!confirm("Réactiver cet utilisateur ?")) return;';
+  bodyHtml += 'try {';
+  bodyHtml += 'const r = await fetch("/api/admin/users/" + btn.dataset.id + "/reactivate", { method: "PUT" });';
+  bodyHtml += 'if (r.ok) window.location.reload();';
+  bodyHtml += 'else alert("Erreur");';
+  bodyHtml += '} catch(e) { alert("Erreur"); }';
+  bodyHtml += '});';
+  bodyHtml += '});';
+
+  bodyHtml += 'document.querySelectorAll(".delete-btn").forEach(btn => {';
+  bodyHtml += 'btn.addEventListener("click", async () => {';
+  bodyHtml += 'const name = btn.dataset.name;';
+  bodyHtml += 'if (!confirm("Supprimer définitivement l\'utilisateur " + name + " ? Cette action est irréversible.")) return;';
+  bodyHtml += 'if (!confirm("Confirmer la suppression de " + name + " ?")) return;';
+  bodyHtml += 'try {';
+  bodyHtml += 'const r = await fetch("/api/admin/users/" + btn.dataset.id, { method: "DELETE" });';
+  bodyHtml += 'if (r.ok) window.location.reload();';
+  bodyHtml += 'else alert("Erreur");';
+  bodyHtml += '} catch(e) { alert("Erreur"); }';
+  bodyHtml += '});';
+  bodyHtml += '});';
+  bodyHtml += '</script>';
+%>
+<%- include('../partials/appShell.ejs', { language: language || 'fr', title, user, currentPath, styles: ['/css/admin.css'], body: bodyHtml }) %>

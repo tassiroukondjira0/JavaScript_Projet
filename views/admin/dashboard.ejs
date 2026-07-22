@@ -1,0 +1,98 @@
+<% const currentPath = '/admin'; %>
+<% const title = 'Admin — Djokko'; %>
+<%
+  const tAny = (key) => (typeof t === 'function' ? t(key) : key);
+  const statsAny = stats || {};
+  const users = statsAny.users != null ? statsAny.users : 0;
+  const posts = statsAny.posts != null ? statsAny.posts : 0;
+  const comments = statsAny.comments != null ? statsAny.comments : 0;
+  const reports = statsAny.reports != null ? statsAny.reports : 0;
+  const notifications = statsAny.notifications != null ? statsAny.notifications : 0;
+  const total = users + posts + comments + reports + notifications || 1;
+
+  let bodyHtml = '<main class="admin-shell">';
+  bodyHtml += '<div class="admin-head">';
+  bodyHtml += '<h2>Tableau de bord</h2>';
+  bodyHtml += "<p class=\"muted\">Vue d'ensemble de l'activite de la plateforme Djokko.</p>";
+  bodyHtml += '</div>';
+  bodyHtml += '<section class="stat-grid">';
+
+  bodyHtml += '<div class="stat-card stat-users"><div class="stat-icon">👥</div><div class="stat-body"><div class="stat-value">' + users + '</div><div class="stat-label">Utilisateurs</div></div></div>';
+  bodyHtml += '<div class="stat-card stat-posts"><div class="stat-icon">📝</div><div class="stat-body"><div class="stat-value">' + posts + '</div><div class="stat-label">Publications</div></div></div>';
+  bodyHtml += '<div class="stat-card stat-comments"><div class="stat-icon">💬</div><div class="stat-body"><div class="stat-value">' + comments + '</div><div class="stat-label">Commentaires</div></div></div>';
+  bodyHtml += '<div class="stat-card stat-reports"><div class="stat-icon">⚠️</div><div class="stat-body"><div class="stat-value">' + reports + '</div><div class="stat-label">Signalements</div></div></div>';
+  bodyHtml += '<div class="stat-card stat-notif"><div class="stat-icon">🔔</div><div class="stat-body"><div class="stat-value">' + notifications + '</div><div class="stat-label">Notifications</div></div></div>';
+
+  bodyHtml += '</section>';
+  bodyHtml += '<div style="display:flex;gap:12px;margin:16px 0;flex-wrap:wrap;">';
+  bodyHtml += '<a href="/admin/users" class="btn" style="flex:1;text-align:center;">👥 Gérer les utilisateurs</a>';
+  bodyHtml += '<a href="/admin/crud/posts" class="btn" style="flex:1;text-align:center;">📝 Publications</a>';
+  bodyHtml += '<a href="/admin/crud/reports" class="btn" style="flex:1;text-align:center;">⚠️ Signalements</a>';
+  bodyHtml += '<a href="/admin/crud/comments" class="btn" style="flex:1;text-align:center;">💬 Commentaires</a>';
+  bodyHtml += '</div>';
+  bodyHtml += '<div class="admin-cols">';
+
+  bodyHtml += '<section class="card admin-card">';
+  bodyHtml += '<h3>Repartition du contenu</h3>';
+  bodyHtml += '<div class="donut-wrap">';
+  bodyHtml += '<svg viewBox="0 0 120 120" class="donut" width="180" height="180" role="img" aria-label="Repartition du contenu">';
+  bodyHtml += '<circle class="donut-track" cx="60" cy="60" r="52" />';
+  bodyHtml += '<circle class="donut-seg seg-users" cx="60" cy="60" r="52" />';
+  bodyHtml += '<circle class="donut-seg seg-posts" cx="60" cy="60" r="52" />';
+  bodyHtml += '<circle class="donut-seg seg-comments" cx="60" cy="60" r="52" />';
+  bodyHtml += '<circle class="donut-seg seg-reports" cx="60" cy="60" r="52" />';
+  bodyHtml += '<circle class="donut-seg seg-notif" cx="60" cy="60" r="52" />';
+  bodyHtml += '</svg>';
+  bodyHtml += '<div class="donut-center"><div class="donut-total">' + total + '</div><div class="muted">Total</div></div>';
+  bodyHtml += '</div>';
+  bodyHtml += '<ul class="legend" id="donut-legend"></ul>';
+  bodyHtml += '</section>';
+
+  bodyHtml += '<section class="card admin-card"><h3>Proportion par type</h3><div class="bars" id="bars"></div></section>';
+  bodyHtml += '</div>';
+
+  bodyHtml += '<section class="card admin-card" style="margin-top:16px;"><h3>Journal d\u0027activite (recent)</h3><ul class="activity-list">';
+  if (recentActivity.length) {
+    recentActivity.forEach(function(a) {
+      bodyHtml += '<li class="activity-item"><span class="activity-dot"></span><div><strong>' + a.action + '</strong></div><div class="muted activity-time">' + a.created_at + '</div></li>';
+    });
+  } else {
+    bodyHtml += '<li class="muted">Aucune activite.</li>';
+  }
+  bodyHtml += '</ul></section>';
+
+  bodyHtml += '</main>';
+
+  bodyHtml += '<script>';
+  bodyHtml += '(function(){';
+  bodyHtml += 'const stats = ' + JSON.stringify(statsAny) + ';';
+  bodyHtml += 'const items = [';
+  bodyHtml += '{key:"users",label:"Utilisateurs",cls:"seg-users",color:"var(--primary)"},';
+  bodyHtml += '{key:"posts",label:"Publications",cls:"seg-posts",color:"#7C5CFC"},';
+  bodyHtml += '{key:"comments",label:"Commentaires",cls:"seg-comments",color:"#17A97A"},';
+  bodyHtml += '{key:"reports",label:"Signalements",cls:"seg-reports",color:"#E5484D"},';
+  bodyHtml += '{key:"notifications",label:"Notifications",cls:"seg-notif",color:"#F2A93B"}';
+  bodyHtml += '];';
+  bodyHtml += 'const total_val = Object.keys(stats).reduce(function(s,k){return s+(Number(stats[k])||0);},0)||1;';
+  bodyHtml += 'const R=52, C=2*Math.PI*R; let offset=0;';
+  bodyHtml += 'const legend=document.getElementById("donut-legend");';
+  bodyHtml += 'const bars=document.getElementById("bars");';
+  bodyHtml += 'items.forEach(function(it){';
+  bodyHtml += 'const val=Number(stats[it.key])||0; const frac=val/total_val; const len=frac*C;';
+  bodyHtml += 'const seg=document.querySelector(".donut-seg."+it.cls);';
+  bodyHtml += 'if(seg){seg.style.stroke=it.color; seg.style.strokeDasharray=len+" "+(C-len); seg.style.strokeDashoffset=-offset;}';
+  bodyHtml += 'offset+=len;';
+  bodyHtml += 'var li=document.createElement("li"); li.className="legend-item";';
+  bodyHtml += 'li.innerHTML="<span class=\\"legend-swatch\\" style=\\"background:"+it.color+"\\"></span><span class=\\"legend-label\\">"+it.label+"</span><span class=\\"legend-val\\">"+val+"</span>";';
+  bodyHtml += 'legend&&legend.appendChild(li);';
+  bodyHtml += 'const max=Math.max(1,...items.map(function(i){return Number(stats[i.key])||0;}));';
+  bodyHtml += 'var bar=document.createElement("div"); bar.className="bar-row";';
+  bodyHtml += 'bar.innerHTML="<span class=\\"bar-label\\">"+it.label+"</span><span class=\\"bar-track\\"><span class=\\"bar-fill\\" style=\\"width:"+(val/max*100)+"%;background:"+it.color+"\\"></span></span><span class=\\"bar-val\\">"+val+"</span>";';
+  bodyHtml += 'bars&&bars.appendChild(bar);';
+  bodyHtml += '});';
+  bodyHtml += '})();';
+  bodyHtml += '</script>';
+
+
+%>
+<%- include('../partials/appShell.ejs', { language: language || 'fr', title, user, currentPath, styles: ['/css/admin.css'], body: bodyHtml }) %>

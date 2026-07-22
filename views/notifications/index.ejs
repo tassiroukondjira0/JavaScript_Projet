@@ -1,0 +1,48 @@
+<%- include('../partials/appShell', {
+  language: language || 'fr',
+  title: 'Notifications',
+  user,
+  currentPath: '/notifications',
+  body: `
+    <section class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <h2 style="margin:0;">Notifications</h2>
+        <button class="btn" id="btnMarkRead">Tout marquer comme lu</button>
+      </div>
+
+      <div id="notifications-list-container">
+        <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">Chargement...</p>
+      </div>
+    </section>
+
+    <script>
+      async function refresh() {
+        const res = await fetch('/notifications/list');
+        const data = await res.json();
+        const list = document.getElementById('notifications-list-container');
+        if (!list) return;
+
+        if (!data.notifications || data.notifications.length === 0) {
+          list.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">Aucune notification</p>';
+          return;
+        }
+
+        list.innerHTML = data.notifications.map(n => {
+          const isUnread = n.is_read ? '' : 'unread';
+          return '<div class="notification-item ' + isUnread + '">' +
+            '<div class="notification-info"><div class="notification-text">' +
+            '<strong>' + (n.sender_name || 'Système') + '</strong> — ' + n.type +
+            '</div><div style="font-size: 0.7rem; color: var(--text-muted);">' + new Date(n.created_at).toLocaleString('fr-FR') + '</div></div></div>';
+        }).join('');
+      }
+
+      document.getElementById('btnMarkRead')?.addEventListener('click', async () => {
+        await fetch('/notifications/mark-all-read', { method: 'POST' });
+        await refresh();
+      });
+
+      refresh();
+    </script>
+  `
+}) %>
+

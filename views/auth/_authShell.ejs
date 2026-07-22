@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="<%= language || 'fr' %>">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title || 'Djokko' %></title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <% if (typeof styles !== 'undefined' && styles && Array.isArray(styles)) { %>
+    <% styles.forEach(href => { %>
+      <link rel="stylesheet" href="<%= href %>" />
+    <% }) %>
+  <% } %>
+</head>
+<body class="auth-page">
+  <div id="realtimeNotificationToast" class="toast muted"></div>
+
+  <div class="auth-shell">
+    <div class="auth-shell-left">
+      <%- hero %>
+    </div>
+    <div class="auth-shell-right">
+      <%- form %>
+    </div>
+  </div>
+
+  <%- scripts %>
+</body>
+</html>
+

@@ -1,0 +1,83 @@
+<aside class="fb-left-inner" aria-label="Raccourcis">
+  <!-- User shortcut (like Facebook's "Your profile" at top) -->
+  <% if (user) { %>
+    <a href="/dashboard" class="fb-left-item fb-left-profile">
+      <div class="fb-left-avatar">
+        <% if (user.profile_picture) { %>
+          <img src="/uploads/<%= user.profile_picture %>" onerror="this.src='/images/default-avatar.svg'" alt="avatar" />
+        <% } else { %>
+          <img src="/images/default-avatar.svg" alt="avatar" />
+        <% } %>
+      </div>
+      <span class="fb-left-label"><%= user.fullname %></span>
+    </a>
+  <% } %>
+
+  <!-- Main shortcuts -->
+  <a href="/posts" class="fb-left-item <%= currentPath.startsWith('/posts') || currentPath === '/' ? 'active' : '' %>">
+    <span class="fb-left-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    </span>
+    <span class="fb-left-label">Accueil</span>
+  </a>
+
+  <a href="/friends" class="fb-left-item <%= currentPath.startsWith('/friends') ? 'active' : '' %>">
+    <span class="fb-left-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+    </span>
+    <span class="fb-left-label">Amis</span>
+  </a>
+
+  <a href="/messages" class="fb-left-item <%= currentPath.startsWith('/messages') ? 'active' : '' %>">
+    <span class="fb-left-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </span>
+    <span class="fb-left-label">Messages</span>
+    <span id="messages-left-badge" class="fb-badge" style="display:none;">0</span>
+  </a>
+
+  <a href="/notifications" class="fb-left-item <%= currentPath.startsWith('/notifications') ? 'active' : '' %>">
+    <span class="fb-left-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+    </span>
+    <span class="fb-left-label">Notifications</span>
+    <span id="notifs-left-badge" class="fb-badge" style="display:none;">0</span>
+  </a>
+
+  <a href="/dashboard" class="fb-left-item <%= currentPath.startsWith('/dashboard') ? 'active' : '' %>">
+    <span class="fb-left-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="7" rx="1"></rect></svg>
+    </span>
+    <span class="fb-left-label">Profil</span>
+  </a>
+
+  <div class="fb-left-divider"></div>
+
+  <!-- Shortcuts section header -->
+  <span class="fb-left-section-title">Raccourcis</span>
+
+  <a href="/activity" class="fb-left-item">
+    <span class="fb-left-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+    </span>
+    <span class="fb-left-label">Activité</span>
+  </a>
+
+  <!-- Admin shortcut (visible only to admins) -->
+  <% if (user && (user.is_admin || user.is_super_admin)) { %>
+    <a href="/admin" class="fb-left-item <%= currentPath.startsWith('/admin') ? 'active' : '' %>">
+      <span class="fb-left-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+      </span>
+      <span class="fb-left-label">Administration</span>
+    </a>
+  <% } %>
+
+  <!-- Login shortcut (shown when no user) -->
+  <% if (!user) { %>
+    <a href="/auth/login" class="fb-left-item">
+      <span class="fb-left-icon">🔑</span>
+      <span class="fb-left-label">Connexion</span>
+    </a>
+  <% } %>
+</aside>

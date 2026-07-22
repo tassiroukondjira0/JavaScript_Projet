@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="<%= language || 'fr' %>">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Djokko — <%= t('slogan') %></title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/landing.css" />
+</head>
+<body class="landing-page">
+  <div class="bg-scene" aria-hidden="true">
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
+    <div class="bg-blob blob-4"></div>
+  </div>
+
+  <header class="landing-header">
+    <div class="brand">
+      <div class="logo">Djokko</div>
+      <span class="brand-tag"><%= t('brandTag', 'social') %></span>
+    </div>
+    <div class="actions">
+      <div class="lang" role="group" aria-label="<%= t('language') %>">
+        <a href="/lang/fr" class="<%= language === 'fr' ? 'active' : '' %>">FR</a> |
+        <a href="/lang/en" class="<%= language === 'en' ? 'active' : '' %>">EN</a>
+      </div>
+
+      <button id="btn-toggle-theme" class="btn btn-ghost" type="button" aria-label="Toggle theme">🌓</button>
+      <a class="btn" href="/auth/login" id="btn-login"><%= t('login') %></a>
+      <a class="btn btn-primary" href="/auth/register" id="btn-signup"><%= t('signup') %></a>
+    </div>
+  </header>
+
+  <main class="landing-main">
+    <section class="landing-hero">
+      <span class="chip"><%= t('landingChip') %></span>
+      <h1 class="landing-title"><%= t('landingTitleMain') %><span class="grad"><%= t('landingTitleAccent') %></span>.</h1>
+      <p class="landing-sub"><%= t('landingSub') %></p>
+      <div class="landing-cta">
+        <a class="btn btn-primary btn-lg" href="/auth/register"><%= t('signup') %></a>
+        <a class="btn btn-lg" href="/auth/login"><%= t('login') %></a>
+      </div>
+
+      <div class="landing-features">
+        <div class="feature">
+          <span class="feature-icon">👤</span>
+          <span class="feature-text"><%= t('feature1') %></span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">📰</span>
+          <span class="feature-text"><%= t('feature2') %></span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">💬</span>
+          <span class="feature-text"><%= t('feature3') %></span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">🔔</span>
+          <span class="feature-text"><%= t('feature4') %></span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="landing-footer"><%= t('landingFooter') %></footer>
+
+  <script>
+    window.__DJOKKO_T__ = {
+      toggleThemeAria: function (theme) {
+        const current = theme || 'dark';
+        return `Toggle theme (currently ${current})`;
+      },
+      themeDarkTitle: <%- JSON.stringify(t('themeDarkTitle')) %>,
+      themeLightTitle: <%- JSON.stringify(t('themeLightTitle')) %>
+    };
+  </script>
+
+  <script src="/js/landing.js"></script>
+  <script src="/js/theme.js"></script>
+</body>
+</html>
+
+
+

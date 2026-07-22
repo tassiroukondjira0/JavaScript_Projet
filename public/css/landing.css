@@ -1,0 +1,127 @@
+/* Djokko — Page d'accueil (landing) raffinée */
+
+.landing-page{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  overflow-x:hidden;
+}
+
+.landing-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:18px 32px;
+  position:sticky;
+  top:0;
+  z-index:100;
+  backdrop-filter:blur(18px) saturate(160%);
+  background:color-mix(in srgb, var(--bg) 78%, transparent);
+  border-bottom:1px solid var(--border);
+}
+.landing-header .brand{display:flex;align-items:center;gap:12px;}
+.brand-tag{
+  font-size:12px;font-weight:600;color:var(--primary);
+  background:rgba(var(--primary-rgb),.10);
+  padding:3px 10px;border-radius:999px;
+}
+.landing-header .actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+.landing-main{
+  flex:1;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  max-width:900px;
+  width:100%;
+  margin:0 auto;
+  padding:60px 32px;
+}
+
+.landing-hero{
+  width:100%;
+  max-width:720px;
+  text-align:center;
+  animation:fadeUp .6s ease both;
+}
+.landing-hero .chip{display:inline-block;}
+.landing-cta{justify-content:center;}
+.landing-cta .btn{flex:0 0 auto;}
+.landing-title{
+  font-size:clamp(2.2rem, 5vw, 3.8rem);
+  line-height:1.08;
+  margin:18px 0 14px;
+  letter-spacing:-1px;
+  font-weight:900;
+}
+.landing-title .grad{
+  background:linear-gradient(135deg, var(--primary), var(--violet));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.landing-sub{
+  font-size:1.1rem;
+  line-height:1.65;
+  color:var(--muted);
+  max-width:540px;
+  margin:0 auto 28px;
+}
+.landing-cta{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:38px;}
+.btn-lg{padding:14px 28px;font-size:15px;}
+
+.landing-features{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:12px;
+}
+
+/* Aperçu (carte de publication factice) */
+.landing-preview{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  animation:cardRise .7s cubic-bezier(.2,.8,.2,1) both;
+}
+.preview-card{
+  background:color-mix(in srgb, var(--card) 88%, transparent);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:18px;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(10px);
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+.preview-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}
+.preview-card-2{transform:translateX(28px);}
+.preview-card-2:hover{transform:translateX(28px) translateY(-4px);}
+.preview-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.preview-name{font-weight:700;}
+.preview-time{font-size:12px;color:var(--muted);}
+.preview-body{font-size:15px;line-height:1.55;margin-bottom:12px;}
+.preview-img{
+  height:140px;border-radius:14px;margin-bottom:12px;
+  background:linear-gradient(135deg, var(--primary), var(--violet));
+  opacity:.85;
+}
+.preview-actions{display:flex;gap:16px;color:var(--muted);font-size:13px;font-weight:600;}
+
+.landing-footer{
+  text-align:center;
+  padding:24px;
+  color:var(--muted);
+  font-size:13px;
+  border-top:1px solid var(--border);
+}
+
+@media (max-width: 920px){
+  .landing-main{grid-template-columns:1fr;gap:28px;padding:40px 20px;}
+  .landing-preview{max-width:480px;}
+  .preview-card-2{transform:none;}
+  .preview-card-2:hover{transform:translateY(-4px);}
+}
+@media (max-width: 560px){
+  .landing-header{padding:14px 18px;}
+  .landing-features{grid-template-columns:1fr;}
+  .landing-cta .btn{flex:1;text-align:center;}
+}

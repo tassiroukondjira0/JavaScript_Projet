@@ -1,0 +1,5 @@
+- [ ] Revert any accidental corruption in views/profile/index.ejs and any admin/*.ejs if they were modified beyond include-path fixes.
+- [ ] Rebuild views/admin/dashboard.ejs to a syntactically correct EJS file (the current file ends abruptly during <%- include(...)
+- [ ] Ensure all includes in EJS templates reference correct relative paths to views/partials/appShell.ejs.
+- [ ] Start server and check GET /admin/dashboard and GET /posts for 500 errors.
+

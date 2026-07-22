@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="<%= (typeof language !== 'undefined' && language) ? language : 'fr' %>">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Djokko</title>
+
+  <link rel="stylesheet" href="/css/style.css" />
+
+  <% if (typeof styles !== 'undefined' && styles && Array.isArray(styles)) { %>
+    <% styles.forEach(function (href) { %>
+      <link rel="stylesheet" href="<%= href %>" />
+    <% }) %>
+  <% } %>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/notificationsSocket.js"></script>
+</head>
+<body data-user-id="<%= (user && user.id) ? user.id : '' %>">
+  <div id="realtimeNotificationToast" class="toast muted"></div>
+
+  <script id="__DJOKKO_USER_JSON" type="application/json"><%- JSON.stringify(user || null) %></script>
+  <script>
+    window.__DJOKKO_USER__ = JSON.parse(
+      document.getElementById('__DJOKKO_USER_JSON')?.textContent || 'null'
+    );
+  </script>
+
+  <!-- FACEBOOK-LIKE STICKY HEADER - rendered by main.js -->
+  <div id="header-placeholder"></div>
+
+  <div class="fb-wrapper">
+    <!-- MAIN CONTENT - News Feed / Profile / etc. -->
+    <main class="fb-main">
+      <%- body %>
+    </main>
+
+    <!-- RIGHT SIDEBAR - Contacts (rendered by main.js) -->
+    <aside class="fb-right" aria-label="Contacts et notifications">
+      <div id="right-sidebar-placeholder"></div>
+    </aside>
+  </div>
+
+  <script src="/js/main.js"></script>
+
+  <% if (typeof scripts !== 'undefined' && scripts && Array.isArray(scripts)) { %>
+    <% scripts.forEach(function (src) { %>
+      <script src="<%= src %>"></script>
+    <% }) %>
+  <% } %>
+</body>
+</html>

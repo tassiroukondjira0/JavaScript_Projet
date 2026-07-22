@@ -1,0 +1,183 @@
+<% const currentPath = '/posts'; %>
+<% const title = 'Publications'; %>
+<%
+  const tAny = (key) => (typeof t === 'function' ? t(key) : key);
+  const fullname = user && user.fullname ? user.fullname : '';
+  const userLang = (typeof language !== 'undefined' && language) ? language : 'fr';
+  const langLocale = userLang === 'en' ? 'en-US' : 'fr-FR';
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString(langLocale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch(e) { return dateStr; }
+  }
+  let bodyHtml = '<main><h2>Fil d\'actualité</h2>';
+  if (user) {
+    bodyHtml += '<p class="muted">Bienvenue, <strong>' + fullname + '</strong> 👋</p>';
+  }
+
+  // Stories section
+  bodyHtml += '<section class="card stories-section" id="storiesSection" style="margin-bottom:16px;">';
+  bodyHtml += '<div class="stories-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+  bodyHtml += '<h3 style="margin:0;font-size:16px;">Stories</h3>';
+  bodyHtml += '</div>';
+  bodyHtml += '<div id="storiesContainer" class="stories-container" style="display:flex;gap:12px;overflow-x:auto;padding:4px 0;">';
+  bodyHtml += '<div class="story-add" id="storyAddBtn" style="min-width:80px;height:120px;border-radius:12px;background:var(--card-2);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:4px;flex-shrink:0;">';
+  bodyHtml += '<div style="width:40px;height:40px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;">+</div>';
+  bodyHtml += '<span style="font-size:11px;color:var(--muted);">Ajouter</span>';
+  bodyHtml += '</div>';
+  bodyHtml += '<div id="storiesList" style="display:flex;gap:12px;"></div>';
+  bodyHtml += '</div>';
+  bodyHtml += '</section>';
+
+  // Story upload modal
+  bodyHtml += '<div id="storyModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;">';
+  bodyHtml += '<div style="background:var(--card);padding:24px;border-radius:16px;max-width:400px;width:90%;">';
+  bodyHtml += '<h3>Ajouter une story</h3>';
+  bodyHtml += '<p class="muted">La story disparaîtra dans 24h</p>';
+  bodyHtml += '<form id="storyForm" enctype="multipart/form-data">';
+  bodyHtml += '<button type="button" class="btn" style="display:block;width:100%;margin:12px 0;cursor:pointer;" id="storyFileBtn">';
+  bodyHtml += '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Choisir une photo/vidéo';
+  bodyHtml += '</button>';
+  bodyHtml += '<input type="file" name="media" accept="image/*,video/*" style="display:none;" id="storyFileInput" />';
+  bodyHtml += '<img id="storyPreview" style="max-width:100%;max-height:200px;display:none;border-radius:8px;margin:8px 0;" />';
+  bodyHtml += '<textarea name="caption" class="input" placeholder="Légende (optionnelle)" style="width:100%;box-sizing:border-box;min-height:60px;margin:8px 0;"></textarea>';
+  bodyHtml += '<div style="display:flex;gap:8px;">';
+  bodyHtml += '<button type="submit" class="btn btn-primary" style="flex:1;">Publier</button>';
+  bodyHtml += '<button type="button" class="btn" id="closeStoryBtn">Annuler</button>';
+  bodyHtml += '</div>';
+  bodyHtml += '</form>';
+  bodyHtml += '</div>';
+  bodyHtml += '</div>';
+
+  // Story viewer modal
+  bodyHtml += '<div id="storyViewer" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:9999;align-items:center;justify-content:center;">';
+  bodyHtml += '<div id="storyViewerContent" style="width:100%;max-width:420px;height:100%;max-height:700px;position:relative;">';
+  bodyHtml += '<button id="closeStoryViewer" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);border:none;color:#fff;font-size:24px;width:36px;height:36px;border-radius:50%;cursor:pointer;z-index:10;">✕</button>';
+  bodyHtml += '<div id="storySlideshow"></div>';
+  bodyHtml += '</div>';
+  bodyHtml += '</div>';
+
+  // Post composer
+  bodyHtml += '<section class="card">';
+  bodyHtml += '<form id="post-composer" method="POST" action="/posts" enctype="multipart/form-data">';
+  bodyHtml += '<div class="composer-row">';
+  bodyHtml += '<div class="avatar avatar-sm" aria-hidden="true">';
+  if (user && user.profile_picture) {
+    bodyHtml += '<img src="/uploads/' + user.profile_picture + '" onerror="this.parentNode.textContent=\'👤\'" alt="avatar" />';
+  } else {
+    bodyHtml += '👤';
+  }
+  bodyHtml += '</div>';
+  bodyHtml += '<textarea name="content" id="composer-content" class="composer-input" rows="3" placeholder="Quoi de neuf' + (user ? ', ' + fullname : '') + ' ?"></textarea>';
+  bodyHtml += '</div>';
+  bodyHtml += '<div class="composer-row composer-footer">';
+  bodyHtml += '<label class="composer-photo-btn" title="Ajouter une photo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> <span>Photo</span><input type="file" name="image" id="composer-image" accept="image/*" hidden /></label>';
+  bodyHtml += '<span id="composer-filename" class="muted"></span>';
+  bodyHtml += '<button type="submit" class="btn btn-primary">Publier</button>';
+  bodyHtml += '</div>';
+  bodyHtml += '<div id="composer-preview" class="composer-preview" style="display:none;">';
+  bodyHtml += '<img id="composer-preview-img" alt="Aperçu" />';
+  bodyHtml += '<button type="button" id="composer-remove-img" class="composer-remove-img" title="Retirer l\'image">✕</button>';
+  bodyHtml += '</div>';
+  bodyHtml += '</form>';
+  bodyHtml += '</section>';
+
+  // Posts feed
+  bodyHtml += '<section class="card" id="postsFeed">';
+  if (!posts || posts.length === 0) {
+    bodyHtml += '<p class="muted">Aucune publication pour le moment.</p>';
+  } else {
+    posts.forEach(p => {
+      var postDate = formatDate(p.created_at);
+      bodyHtml += '<article class="post" data-post-id="' + p.id + '" data-user-id="' + p.user_id + '">';
+      bodyHtml += '<div class="post-head">';
+      bodyHtml += '<div class="avatar avatar-sm" aria-hidden="true">';
+      if (p.profile_picture) {
+        bodyHtml += '<img src="/uploads/' + p.profile_picture + '" onerror="this.parentNode.textContent=\'👤\'" alt="avatar" />';
+      } else {
+        bodyHtml += '👤';
+      }
+      bodyHtml += '</div>';
+      bodyHtml += '<div>';
+      bodyHtml += '<div class="post-user">' + p.fullname + '</div>';
+      bodyHtml += '<div class="post-date">' + postDate + '</div>';
+      bodyHtml += '</div>';
+      bodyHtml += '</div>';
+      if (p.content) {
+        bodyHtml += '<div class="post-content">' + p.content + '</div>';
+      }
+      if (p.images && p.images.length) {
+        bodyHtml += '<div class="post-image-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">';
+        p.images.forEach(img => {
+          bodyHtml += '<img class="post-image" src="/uploads/' + img.filename + '" alt="image" style="width:100%;height:160px;object-fit:cover;" />';
+        });
+        bodyHtml += '</div>';
+      } else if (p.image) {
+        bodyHtml += '<img class="post-image" src="/uploads/' + p.image + '" alt="image" />';
+      }
+      
+      // Action buttons bar
+      bodyHtml += '<div class="post-actions-bar" style="display:flex;border-top:1px solid var(--border);padding:6px 0;margin-top:8px;">';
+      
+      // Reaction button (long-press)
+      bodyHtml += '<div class="reaction-wrapper" style="position:relative;flex:1;">';
+      bodyHtml += '<button class="post-action-btn reaction-trigger" data-post="' + p.id + '" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;cursor:pointer;font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s;width:100%;">';
+      bodyHtml += '<span class="reaction-emoji">👍</span> <span class="reaction-label">J\'aime</span>';
+      bodyHtml += '</button>';
+      // Reaction popup
+      bodyHtml += '<div class="reaction-popup" style="display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--card);border-radius:24px;padding:6px 10px;box-shadow:0 4px 20px rgba(0,0,0,.3);white-space:nowrap;z-index:100;">';
+      bodyHtml += '<button class="reaction-option" data-post="' + p.id + '" data-type="like" style="font-size:28px;padding:4px;border:none;background:none;cursor:pointer;transition:transform .15s;" onmouseover="this.style.transform=\'scale(1.3)\'" onmouseout="this.style.transform=\'scale(1)\'">👍</button>';
+      bodyHtml += '<button class="reaction-option" data-post="' + p.id + '" data-type="love" style="font-size:28px;padding:4px;border:none;background:none;cursor:pointer;transition:transform .15s;" onmouseover="this.style.transform=\'scale(1.3)\'" onmouseout="this.style.transform=\'scale(1)\'">❤️</button>';
+      bodyHtml += '<button class="reaction-option" data-post="' + p.id + '" data-type="haha" style="font-size:28px;padding:4px;border:none;background:none;cursor:pointer;transition:transform .15s;" onmouseover="this.style.transform=\'scale(1.3)\'" onmouseout="this.style.transform=\'scale(1)\'">😂</button>';
+      bodyHtml += '<button class="reaction-option" data-post="' + p.id + '" data-type="wow" style="font-size:28px;padding:4px;border:none;background:none;cursor:pointer;transition:transform .15s;" onmouseover="this.style.transform=\'scale(1.3)\'" onmouseout="this.style.transform=\'scale(1)\'">😮</button>';
+      bodyHtml += '<button class="reaction-option" data-post="' + p.id + '" data-type="sad" style="font-size:28px;padding:4px;border:none;background:none;cursor:pointer;transition:transform .15s;" onmouseover="this.style.transform=\'scale(1.3)\'" onmouseout="this.style.transform=\'scale(1)\'">😢</button>';
+      bodyHtml += '<button class="reaction-option" data-post="' + p.id + '" data-type="angry" style="font-size:28px;padding:4px;border:none;background:none;cursor:pointer;transition:transform .15s;" onmouseover="this.style.transform=\'scale(1.3)\'" onmouseout="this.style.transform=\'scale(1)\'">😡</button>';
+      bodyHtml += '</div>';
+      bodyHtml += '</div>';
+
+      // Comment button
+      bodyHtml += '<button class="post-action-btn comment-toggle" data-post="' + p.id + '" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;cursor:pointer;font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s;" onmouseover="this.style.background=\'var(--hover-bg)\'" onmouseout="this.style.background=\'transparent\'">💬 <span>Commenter</span></button>';
+
+      // Share button
+      bodyHtml += '<button class="post-action-btn share-toggle" data-post="' + p.id + '" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;cursor:pointer;font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s;" onmouseover="this.style.background=\'var(--hover-bg)\'" onmouseout="this.style.background=\'transparent\'">🔁 <span>Partager</span></button>';
+
+      // Save button
+      bodyHtml += '<button class="post-action-btn save-toggle" data-post="' + p.id + '" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;cursor:pointer;font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s;" onmouseover="this.style.background=\'var(--hover-bg)\'" onmouseout="this.style.background=\'transparent\'">🔖 <span>Enregistrer</span></button>';
+
+      bodyHtml += '</div>';
+
+      // Reaction summary
+      bodyHtml += '<div class="reaction-summary" data-post="' + p.id + '" style="font-size:13px;color:var(--muted);padding:4px 0;"></div>';
+
+      // Comments section (initially hidden)
+      bodyHtml += '<div class="comments-section" data-post="' + p.id + '" style="display:none;border-top:1px solid var(--border);padding-top:8px;margin-top:4px;">';
+      bodyHtml += '<div class="comments-list" style="max-height:300px;overflow-y:auto;"></div>';
+      bodyHtml += '<div class="comment-composer" style="display:flex;gap:8px;margin-top:8px;">';
+      bodyHtml += '<input class="input comment-input" placeholder="Écrire un commentaire..." style="flex:1;" />';
+      bodyHtml += '<button class="btn btn-primary btn-sm comment-submit" type="button">Envoyer</button>';
+      bodyHtml += '</div>';
+      bodyHtml += '</div>';
+
+      bodyHtml += '</article>';
+    });
+  }
+  bodyHtml += '</section>';
+  
+  // Share modal
+  bodyHtml += '<div id="shareModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;">';
+  bodyHtml += '<div style="background:var(--card);padding:24px;border-radius:16px;max-width:400px;width:90%;">';
+  bodyHtml += '<h3>Partager cette publication</h3>';
+  bodyHtml += '<textarea id="shareContent" class="input" placeholder="Ajouter un commentaire (optionnel)" style="width:100%;min-height:80px;margin:12px 0;" rows="3"></textarea>';
+  bodyHtml += '<div style="display:flex;gap:8px;">';
+  bodyHtml += '<button id="confirmShare" class="btn btn-primary" style="flex:1;">Publier le partage</button>';
+  bodyHtml += '<button id="cancelShare" class="btn">Annuler</button>';
+  bodyHtml += '</div>';
+  bodyHtml += '</div>';
+  bodyHtml += '</div>';
+
+  bodyHtml += '<script src="/js/postsInteractions.js"></script>';
+  bodyHtml += '</main>';
+%>
+<%- include('../partials/appShell.ejs', { language: language || 'fr', title, user, currentPath, body: bodyHtml }); %>

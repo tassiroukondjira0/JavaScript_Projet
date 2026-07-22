@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signalements — Admin</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><div class="logo">Djokko</div></div>
+    <div class="actions">
+      <a class="btn" href="/admin/dashboard">Dashboard</a>
+      <a class="btn" href="/admin/crud/users">Utilisateurs</a>
+      <a class="btn" href="/admin/crud/posts">Posts</a>
+    </div>
+  </header>
+  <main class="container">
+    <section class="card">
+      <h2>Signalements</h2>
+      <table style="width:100%">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Type</th>
+            <th>ID cible</th>
+            <th>Signalé par</th>
+            <th>Raison</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% reports.forEach(r => { %>
+            <tr>
+              <td><%= r.id %></td>
+              <td><%= r.target_type %></td>
+              <td><%= r.target_id %></td>
+              <td><%= r.reporter_name %></td>
+              <td><%= r.reason || '' %></td>
+              <td><%= r.created_at %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

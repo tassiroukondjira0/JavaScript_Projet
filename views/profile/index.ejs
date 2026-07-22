@@ -1,0 +1,152 @@
+<% const currentPath = (profileUser && profileUser.id) ? '/profile/' + profileUser.id : '/profile'; %>
+<% const title = 'Profil'; %>
+<% 
+  const tAny = (key) => (typeof t === 'function' ? t(key) : key);
+  const profileTitleText = tAny("profileTitle");
+  const addFriendText = tAny("addFriend");
+  const sendingFriendRequestText = tAny("sendingFriendRequest");
+  const friendRequestSentText = tAny("friendRequestSent");
+  const errorText = tAny("error");
+  const editProfileTitleText = tAny("editProfileTitle");
+  const profilePictureLabelText = tAny("profilePictureLabel");
+  const coverPhotoLabelText = tAny("coverPhotoLabel");
+  const bioLabelText = tAny("bioLabel");
+  const bioPlaceholderText = tAny("bioPlaceholder");
+  const establishmentLabelText = tAny("establishmentLabel");
+  const establishmentPlaceholderText = tAny("establishmentPlaceholder");
+  const locationLabelText = tAny("locationLabel");
+  const locationPlaceholderText = tAny("locationPlaceholder");
+  const saveProfileChangesText = tAny("saveProfileChanges");
+
+  // profileUser = le propriétaire du profil affiché
+  // user = le viewer connecté (utilisé par appShell)
+  const pUser = profileUser || user || null;
+  const connectedUser = user || viewer || null;
+
+  const userLang = (typeof language !== 'undefined' && language) ? language : 'fr';
+  const langLocale = userLang === 'en' ? 'en-US' : 'fr-FR';
+
+  let bodyHtml = '<main><section class="card"><h2>' + profileTitleText + '</h2>';
+  if (pUser) {
+    bodyHtml += '<div class="profile">';
+    bodyHtml += pUser.cover_photo ? '<div class="profile-cover" style="background-image:url(/uploads/' + pUser.cover_photo + ');"></div>' : '<div class="profile-cover"></div>';
+    bodyHtml += '<div class="profile-avatar">';
+    bodyHtml += '<img src="' + (pUser.profile_picture ? '/uploads/' + pUser.profile_picture : '/images/default-avatar.svg') + '" alt="avatar" />';
+    bodyHtml += '</div>';
+    bodyHtml += '<div class="profile-body">';
+    bodyHtml += '<h3>' + pUser.fullname + '</h3>';
+    if (connectedUser && (connectedUser.id === pUser.id || connectedUser.is_admin || connectedUser.is_super_admin) && pUser.email) {
+      bodyHtml += '<p class="muted">' + pUser.email + '</p>';
+    }
+    if (pUser.bio) bodyHtml += '<p>' + pUser.bio + '</p>';
+    if (pUser.establishment) bodyHtml += '<p class="muted">🏫 ' + pUser.establishment + '</p>';
+    if (pUser.location) bodyHtml += '<p class="muted">📍 ' + pUser.location + '</p>';
+    bodyHtml += '</div>';
+
+    if (connectedUser && connectedUser.id !== pUser.id) {
+      bodyHtml += "<div class=\"profile-actions\" style=\"display:flex;gap:8px;margin-top:12px;\">";
+      bodyHtml += "<button id=\"addFriendBtn\" class=\"btn btn-primary\" data-id=\"" + pUser.id + "\">" + addFriendText + "</button>";
+      bodyHtml += "<button id=\"sendMessageBtn\" class=\"btn\" data-id=\"" + pUser.id + "\" onclick=\"window.location.href='/messages?user=" + pUser.id + "'\">💬 Message</button>";
+      bodyHtml += "</div>";
+      bodyHtml += "<script>";
+      bodyHtml += "const afb = document.getElementById(\"addFriendBtn\");";
+      bodyHtml += "if (afb) {";
+      bodyHtml += "afb.addEventListener(\"click\", async () => {";
+      bodyHtml += "afb.disabled = true;";
+      bodyHtml += "afb.textContent = " + JSON.stringify(sendingFriendRequestText) + ";";
+      bodyHtml += "try {";
+      bodyHtml += "const r = await fetch(\"/api/friends/request\", { method: \"POST\", headers: { \"Content-Type\": \"application/json\" }, body: JSON.stringify({ receiver_id: afb.dataset.id }) });";
+      bodyHtml += "const json = await r.json();";
+      bodyHtml += "afb.textContent = r.ok ? " + JSON.stringify(friendRequestSentText) + " : (json.error || " + JSON.stringify(errorText) + ");";
+      bodyHtml += "if (r.ok) setTimeout(() => window.location.reload(), 800);";
+      bodyHtml += "else afb.disabled = false;";
+      bodyHtml += "} catch (e) {";
+      bodyHtml += "afb.textContent = " + JSON.stringify(errorText) + ";";
+      bodyHtml += "afb.disabled = false;";
+      bodyHtml += "}";
+      bodyHtml += "});";
+      bodyHtml += "}";
+      bodyHtml += "</script>";
+    } else {
+      bodyHtml += "<div class=\"profile-actions\" style=\"display:flex;gap:8px;margin-top:12px;\">";
+      bodyHtml += "<a href=\"/profile/edit\" class=\"btn btn-primary\">✏️ " + editProfileTitleText + "</a>";
+      bodyHtml += "</div>";
+    }
+
+    // --- STATS ROW ---
+    bodyHtml += '<div class="profile-stats" style="display:flex;gap:24px;margin-top:16px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">';
+    bodyHtml += '<div style="text-align:center;"><div style="font-weight:700;font-size:18px;" id="statPosts">-</div><div class="muted" style="font-size:13px;">Publications</div></div>';
+    bodyHtml += '<div style="text-align:center;"><div style="font-weight:700;font-size:18px;" id="statFriends">-</div><div class="muted" style="font-size:13px;">Amis</div></div>';
+    bodyHtml += '</div>';
+
+    bodyHtml += '</div>';
+  }
+  bodyHtml += '</section>';
+
+  // --- USER POSTS SECTION ---
+  bodyHtml += '<section class="card" id="profilePostsSection" style="margin-top:16px;">';
+  bodyHtml += '<h3 style="margin:0 0 12px;">Publications</h3>';
+  bodyHtml += '<div id="profilePostsContainer"><p class="muted">Chargement...</p></div>';
+  bodyHtml += '</section>';
+
+  // --- FRIENDS SECTION ---
+  bodyHtml += '<section class="card" id="profileFriendsSection" style="margin-top:16px;">';
+  bodyHtml += '<h3 style="margin:0 0 12px;">Amis</h3>';
+  bodyHtml += '<div id="profileFriendsContainer"><p class="muted">Chargement...</p></div>';
+  bodyHtml += '</section>';
+
+  // Load posts and friends via JS
+  bodyHtml += '<script>';
+  bodyHtml += '(async function() {';
+  bodyHtml += '  const userId = ' + (pUser ? pUser.id : 'null') + ';';
+  bodyHtml += '  const currentLang = "' + langLocale + '";';
+  bodyHtml += '  if (!userId) return;';
+  bodyHtml += '  function escapeHtml(str) { if (!str) return ""; const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }';
+  bodyHtml += '  function formatDate(d) { try { return new Date(d).toLocaleDateString(currentLang, { year:"numeric", month:"short", day:"numeric", hour:"2-digit", minute:"2-digit" }); } catch(e){return d;} }';
+  bodyHtml += '  // Load posts';
+  bodyHtml += '  try {';
+  bodyHtml += '    const pr = await fetch("/api/posts/user/" + userId);';
+  bodyHtml += '    const posts = await pr.json();';
+  bodyHtml += '    const pc = document.getElementById("profilePostsContainer");';
+  bodyHtml += '    const statPosts = document.getElementById("statPosts");';
+  bodyHtml += '    if (statPosts) statPosts.textContent = (posts && posts.length) || 0;';
+  bodyHtml += '    if (!posts || posts.length === 0) { pc.innerHTML = \'<p class="muted">Aucune publication.</p>\'; }';
+  bodyHtml += '    else {';
+  bodyHtml += '      pc.innerHTML = posts.map(function(p) {';
+  bodyHtml += '        return \'<article class="post" style="padding:12px 0;">\' +';
+  bodyHtml += '          \'<div class="post-head"><div class="avatar avatar-sm"><img src="/uploads/\' + escapeHtml(p.profile_picture || "") + \'" onerror="this.parentNode.textContent=\'\\u{1F464}\'" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" /></div>\' +';
+  bodyHtml += '          \'<div><div class="post-user">\' + escapeHtml(p.fullname || "") + \'</div>\' +';
+  bodyHtml += '          \'<div class="post-date">\' + formatDate(p.created_at) + \'</div></div></div>\' +';
+  bodyHtml += '          (p.content ? \'<div class="post-content">\' + escapeHtml(p.content) + \'</div>\' : "") +';
+  bodyHtml += '          (p.image ? \'<img class="post-image" src="/uploads/\' + escapeHtml(p.image) + \'" alt="image" />\' : "") +';
+  bodyHtml += '        \'</article>\';';
+  bodyHtml += '      }).join(\'\');';
+  bodyHtml += '    }';
+  bodyHtml += '  } catch(e) { document.getElementById("profilePostsContainer").innerHTML = \'<p class="muted">Erreur chargement</p>\'; }';
+  bodyHtml += '  // Load friends';
+  bodyHtml += '  try {';
+  bodyHtml += '    const fr = await fetch("/api/friends/user/" + userId);';
+  bodyHtml += '    const friends = await fr.json();';
+  bodyHtml += '    const fc = document.getElementById("profileFriendsContainer");';
+  bodyHtml += '    const statFriends = document.getElementById("statFriends");';
+  bodyHtml += '    if (statFriends) statFriends.textContent = (friends && friends.length) || 0;';
+  bodyHtml += '    if (!friends || friends.length === 0) { fc.innerHTML = \'<p class="muted">Aucun ami.</p>\'; }';
+  bodyHtml += '    else {';
+  bodyHtml += '      fc.innerHTML = \'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">\' +';
+  bodyHtml += '        friends.map(function(f) {';
+  bodyHtml += '          var avatar = f.profile_picture ? "/uploads/" + escapeHtml(f.profile_picture) : "/images/default-avatar.svg";';
+  bodyHtml += '          return \'<a href="/profile/\' + f.id + \'" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none;color:var(--text);transition:background .15s;" onmouseover="this.style.background=\'var(--hover-bg)\'" onmouseout="this.style.background=\'transparent\'">\' +';
+  bodyHtml += '            \'<img src="\' + avatar + \'" onerror="this.src=\'/images/default-avatar.svg\'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />\' +';
+  bodyHtml += '            \'<span style="font-weight:600;font-size:13px;">\' + escapeHtml(f.fullname) + \'</span>\' +';
+  bodyHtml += '          \'</a>\';';
+  bodyHtml += '        }).join(\'\') + \'</div>\';';
+  bodyHtml += '    }';
+  bodyHtml += '  } catch(e) { document.getElementById("profileFriendsContainer").innerHTML = \'<p class="muted">Erreur chargement</p>\'; }';
+  bodyHtml += '})();';
+  bodyHtml += '</script>';
+
+  bodyHtml += '<style>.profile-cover{height:200px;background:linear-gradient(100deg,var(--primary-700),var(--accent));background-size:cover;background-position:center;border-radius:12px;margin-bottom:10px}.profile-avatar img{width:96px;height:96px;border-radius:50%;border:3px solid var(--card);margin-top:-48px;display:block;object-fit:cover}.profile-body{margin-top:10px}.profile-body h3{margin:0}.profile-form{margin-top:24px;border-top:1px solid var(--border);padding-top:18px}.profile-form h3{margin:0 0 16px}.profile-form textarea{min-height:80px;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text);margin:8px 0 12px;font-family:inherit}.profile-form label{color:var(--muted);font-size:13px;display:block;margin-top:8px}</style>';
+  bodyHtml += '</main>';
+%>
+<%- include('../partials/appShell.ejs', { language: language || 'fr', title, user, currentPath, body: bodyHtml }) %>
+
