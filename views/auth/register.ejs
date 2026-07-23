@@ -11,102 +11,108 @@
   <script>
     window.__DJOKKO_DISABLE_AUTH_JS__ = true;
   </script>
-  <div class="auth-split">
-    <aside class="auth-hero">
-      <div class="auth-hero-inner">
-        <div class="logo auth-logo">Djokko</div>
-        <h1>Rejoignez Djokko 🚀</h1>
-        <p>Créez votre compte en quelques secondes et connectez-vous avec des amis partout en Afrique et au-delà.</p>
-        <ul class="auth-bullets">
-          <li>📝 Publiez textes et photos en illimité</li>
-          <li>👥 Ajoutez des amis facilement</li>
-          <li>🔔 Restez informé en temps réel</li>
-        </ul>
-      </div>
-    </aside>
 
-    <main class="auth-form-side">
-      <section class="card auth-card">
-        <h2><%= t('signup') || 'Créer un compte' %></h2>
+  <!-- Facebook-style header -->
+  <header class="auth-header">
+    <div class="auth-logo">Djokko</div>
+  </header>
 
-        <% if (typeof error !== 'undefined' && error) { %>
-          <p class="form-error"><%= error %></p>
-        <% } %>
+  <div class="auth-content">
+    <div class="auth-split">
+      <aside class="auth-hero">
+        <div class="auth-hero-inner">
+          <h1>Rejoignez Djokko 🚀</h1>
+          <p>Créez votre compte en quelques secondes et connectez-vous avec des amis partout en Afrique et au-delà.</p>
+          <ul class="auth-bullets">
+            <li>📝 Publiez textes et photos en illimité</li>
+            <li>👥 Ajoutez des amis facilement</li>
+            <li>🔔 Restez informé en temps réel</li>
+          </ul>
+        </div>
+      </aside>
 
-        <form action="/auth/register" method="POST" id="register-form" class="form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="firstname"><%= t('firstName') || 'Prénom' %></label>
-              <input type="text" id="firstname" name="firstname" placeholder="Ex: Aminata" required />
-            </div>
-            <div class="form-group">
-              <label for="lastname"><%= t('lastName') || 'Nom' %></label>
-              <input type="text" id="lastname" name="lastname" placeholder="Ex: Diop" required />
-            </div>
-          </div>
+      <main class="auth-form-side">
+        <section class="card auth-card">
+          <h2><%= t('signup') || 'Créer un compte' %></h2>
 
-          <div class="form-group">
-            <label for="username"><%= t('usernameLabel') || "Nom d'utilisateur" %></label>
-            <input type="text" id="username" name="username" placeholder="ex: amina_22" required />
-          </div>
+          <% if (typeof error !== 'undefined' && error) { %>
+            <p class="form-error"><%= error %></p>
+          <% } %>
 
-          <div class="form-group">
-            <label for="email"><%= t('emailLabel') || "Adresse e-mail" %></label>
-            <input type="email" id="email" name="email" placeholder="vous@exemple.com" required />
-          </div>
-
-          <div class="form-group">
-            <label for="date_of_birth"><%= t('birthDateLabel') || "Date de naissance" %></label>
-            <input type="date" id="date_of_birth" name="date_of_birth" required />
-          </div>
-
-          <div class="form-group">
-            <label for="phone"><%= t('phoneLabel') || "Numéro de téléphone" %></label>
-            <div class="phone-row">
-              <div class="country-select" id="country-select">
-                <button type="button" class="country-toggle" id="country-toggle" aria-haspopup="listbox" aria-expanded="false">
-                  <span id="selected-flag">🇸🇳</span>
-                  <span id="selected-dial">+221</span>
-                  <span class="caret">▾</span>
-                </button>
-                <ul class="country-list" id="country-list" role="listbox" hidden></ul>
-                <input type="hidden" name="country_code" id="country_code" value="+221" />
-                <input type="hidden" name="country_flag" id="country_flag" value="🇸🇳" />
+          <form action="/auth/register" method="POST" id="register-form" class="form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstname"><%= t('firstName') || 'Prénom' %></label>
+                <input type="text" id="firstname" name="firstname" placeholder="Ex: Aminata" required />
               </div>
-              <input type="tel" id="phone" name="phone" placeholder="" inputmode="numeric" required />
+              <div class="form-group">
+                <label for="lastname"><%= t('lastName') || 'Nom' %></label>
+                <input type="text" id="lastname" name="lastname" placeholder="Ex: Diop" required />
+              </div>
             </div>
-            <p class="hint"><%= t('phoneHint') || "Le code pays est ajouté automatiquement à votre numéro." %></p>
-          </div>
 
-          <div class="form-group">
-            <label for="password"><%= t('passwordLabel') || "Mot de passe" %></label>
-            <div class="input-affix">
-              <input type="password" id="password" name="password" placeholder="" required />
-              <button type="button" class="affix-btn" data-target="password" aria-label="Afficher/Masquer le mot de passe">👁️</button>
+            <div class="form-group">
+              <label for="username"><%= t('usernameLabel') || "Nom d'utilisateur" %></label>
+              <input type="text" id="username" name="username" placeholder="ex: amina_22" required />
             </div>
-            <p class="hint"><%= t('passwordHint') || "8 caractères min. : 1 majuscule, 1 minuscule, 1 chiffre, 1 caractère spécial (@$!%*?&)." %></p>
-          </div>
 
-          <div class="form-group">
-            <label for="confirm_password"><%= t('confirmPasswordLabel') || "Confirmer le mot de passe" %></label>
-            <div class="input-affix">
-              <input type="password" id="confirm_password" name="confirm_password" placeholder="" required />
-              <button type="button" class="affix-btn" data-target="confirm_password" aria-label="Afficher/Masquer le mot de passe">👁️</button>
+            <div class="form-group">
+              <label for="email"><%= t('emailLabel') || "Adresse e-mail" %></label>
+              <input type="email" id="email" name="email" placeholder="vous@exemple.com" required />
             </div>
-            <p class="form-error" id="password-mismatch" hidden><%= t('passwordMismatch') || "Les mots de passe ne correspondent pas." %></p>
-          </div>
 
-          <button type="submit" id="submit-btn" class="auth-submit"><%= t('signup') || "S'inscrire" %></button>
-        </form>
-        <p class="auth-switch"><%= t('alreadyHaveAccount') || "Vous avez déjà un compte ?" %> <a href="/auth/login"><%= t('login') || "Connectez-vous" %></a></p>
-      </section>
-    </main>
+            <div class="form-group">
+              <label for="date_of_birth"><%= t('birthDateLabel') || "Date de naissance" %></label>
+              <input type="date" id="date_of_birth" name="date_of_birth" required />
+            </div>
+
+            <div class="form-group">
+              <label for="phone"><%= t('phoneLabel') || "Numéro de téléphone" %></label>
+              <div class="phone-row">
+                <div class="country-select" id="country-select">
+                  <button type="button" class="country-toggle" id="country-toggle" aria-haspopup="listbox" aria-expanded="false">
+                    <span id="selected-flag">🇸🇳</span>
+                    <span id="selected-dial">+221</span>
+                    <span class="caret">▾</span>
+                  </button>
+                  <ul class="country-list" id="country-list" role="listbox" hidden></ul>
+                  <input type="hidden" name="country_code" id="country_code" value="+221" />
+                  <input type="hidden" name="country_flag" id="country_flag" value="🇸🇳" />
+                </div>
+                <input type="tel" id="phone" name="phone" placeholder="" inputmode="numeric" required />
+              </div>
+              <p class="hint"><%= t('phoneHint') || "Le code pays est ajouté automatiquement à votre numéro." %></p>
+            </div>
+
+            <div class="form-group">
+              <label for="password"><%= t('passwordLabel') || "Mot de passe" %></label>
+              <div class="input-affix">
+                <input type="password" id="password" name="password" placeholder="" required />
+                <button type="button" class="affix-btn" data-target="password" aria-label="Afficher/Masquer le mot de passe">👁️</button>
+              </div>
+              <p class="hint"><%= t('passwordHint') || "8 caractères min. : 1 majuscule, 1 minuscule, 1 chiffre, 1 caractère spécial (@$!%*?&)." %></p>
+            </div>
+
+            <div class="form-group">
+              <label for="confirm_password"><%= t('confirmPasswordLabel') || "Confirmer le mot de passe" %></label>
+              <div class="input-affix">
+                <input type="password" id="confirm_password" name="confirm_password" placeholder="" required />
+                <button type="button" class="affix-btn" data-target="confirm_password" aria-label="Afficher/Masquer le mot de passe">👁️</button>
+              </div>
+              <p class="form-error" id="password-mismatch" hidden><%= t('passwordMismatch') || "Les mots de passe ne correspondent pas." %></p>
+            </div>
+
+            <button type="submit" id="submit-btn" class="auth-submit"><%= t('signup') || "S'inscrire" %></button>
+          </form>
+          <p class="auth-switch"><%= t('alreadyHaveAccount') || "Vous avez déjà un compte ?" %> <a href="/auth/login"><%= t('login') || "Connectez-vous" %></a></p>
+        </section>
+      </main>
+    </div>
   </div>
 
   <script src="/js/register.js"></script>
 
   <script>
-    // Détection automatique uniquement FR/EN
     (function () {
       var browserLang = (navigator.language || navigator.userLanguage || 'fr').substring(0, 2);
       var supported = ['fr', 'en'];

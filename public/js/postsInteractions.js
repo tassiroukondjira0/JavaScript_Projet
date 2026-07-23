@@ -116,15 +116,10 @@
       if (!r.ok) return;
       const data = await r.json();
       if (trigger) {
-        const emojiSpan = trigger.querySelector('.reaction-emoji');
-        const labelSpan = trigger.querySelector('.reaction-label');
-        const emojis = { like: '👍', love: '❤️', haha: '😂', wow: '😮', sad: '😢', angry: '😡' };
         if (data.reacted) {
-          emojiSpan.textContent = emojis[type] || '👍';
-          labelSpan.textContent = type === 'like' ? "J'aime" : type;
+          trigger.classList.add('liked');
         } else {
-          emojiSpan.textContent = '👍';
-          labelSpan.textContent = "J'aime";
+          trigger.classList.remove('liked');
         }
       }
       const summary = document.querySelector('.reaction-summary[data-post="' + postId + '"]');

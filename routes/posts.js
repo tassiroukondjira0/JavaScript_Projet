@@ -49,10 +49,11 @@ router.post('/', requireLogin, upload.fields([{ name: 'image', maxCount: 1 }, { 
   const video = req.files?.video?.[0]?.filename || null;
   const userId = req.session.user.id;
 
-  const postId = await postModel.createPost({ userId, content, image, video });
+  const postId = await postModel.create({ userId, content, image, video });
 
-  await notificationModel.createNotification({
-    userId,
+  // Create notification for the post owner
+  await notificationModel.create({
+    user_id: userId,
     type: 'NEW_REACTION',
     payload: { postId }
   });
@@ -84,14 +85,14 @@ router.post('/:postId/comments', requireLogin, async (req, res) => {
   if (!content) return res.status(400).send('content requis');
 
   const userId = req.session.user.id;
-  const commentId = await commentModel.addComment({ postId, userId, content });
+  const commentId = await commentModel.create({ post_id: postId, user_id: userId, content });
 
   const ownerId = await postModel.findPostOwner(postId);
   if (ownerId && ownerId !== userId) {
-    await notificationModel.createNotification({
-      userId: ownerId,
+    await notificationModel.create({
+      user_id: ownerId,
       type: 'NEW_COMMENT',
-      payload: { postId, commentId }
+      payload: { postId, commentId, sender_id: userId }
     });
   }
 
@@ -138,10 +139,10 @@ router.post('/:postId/reactions', requireLogin, async (req, res) => {
 
   const ownerId = await postModel.findPostOwner(postId);
   if (ownerId && ownerId !== userId) {
-    await notificationModel.createNotification({
-      userId: ownerId,
+    await notificationModel.create({
+      user_id: ownerId,
       type: 'NEW_REACTION',
-      payload: { postId, reactionType }
+      payload: { postId, reactionType, sender_id: userId }
     });
   }
 
@@ -156,10 +157,10 @@ router.post('/:postId/share', requireLogin, async (req, res) => {
   await shareModel.sharePost({ postId, userId });
   const ownerId = await postModel.findPostOwner(postId);
   if (ownerId && ownerId !== userId) {
-    await notificationModel.createNotification({
-      userId: ownerId,
+    await notificationModel.create({
+      user_id: ownerId,
       type: 'NEW_REACTION',
-      payload: { postId, action: 'SHARE' }
+      payload: { postId, action: 'SHARE', sender_id: userId }
     });
   }
 
