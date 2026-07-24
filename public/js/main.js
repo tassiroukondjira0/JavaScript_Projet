@@ -333,8 +333,8 @@ function initSocket() {
   });
 }
 
-// Fetch and render notifications
-async function loadNotifications() {
+// Fetch and render notifications - exposed globally for pages that need to refresh
+window.loadNotifications = async function loadNotifications() {
   const container = document.getElementById('notifications-list-container');
   const fbContainer = document.getElementById('notifications-fb-list');
   if (!container && !fbContainer) return;

@@ -17,27 +17,14 @@
       return;
     }
 
-    var body = document.body;
-    if (!body) {
-      _retryTimer = setTimeout(tryAttach, 200);
-      return;
-    }
-
-    var userId = body.dataset ? body.dataset.userId : null;
-    if (!userId) {
-      // User not logged in, nothing to do
-      return;
-    }
-
+    // Listen for incoming notifications and dispatch a DOM event
+    // so that any page component can react (e.g. refresh the notifications list).
     window.mainSocket.on('new_notification', function (data) {
-      console.log('[Djokko] new_notification', data);
+      console.log('[Djokko] new_notification received via Socket.IO', data);
 
-      var el = document.getElementById('realtimeNotificationToast');
-      if (el) {
-        el.textContent = '🔔 Nouvelle notification: ' + (data && data.type ? data.type : 'INFO');
-        el.classList.add('show');
-        setTimeout(function () { el.classList.remove('show'); }, 2500);
-      }
+      // Dispatch a custom DOM event that the notifications page listens to
+      var event = new CustomEvent('notification_received', { detail: data });
+      document.dispatchEvent(event);
     });
   }
 

@@ -305,11 +305,36 @@
         socket.emit('register', userId);
       });
     } else {
-      // Fallback: only if main.js hasn't created a socket yet
-      socket = window.io({ transports: ['websocket'] });
-      socket.on('connect', () => {
-        socket.emit('register', userId);
-      });
+      // Fallback: wait for mainSocket instead of creating a second connection
+      // Creating a second socket connection would cause double userId registration,
+      // making the user appear offline to friends when the first socket disconnects.
+      console.warn('[Chat] mainSocket not available yet, waiting...');
+      // Poll for mainSocket to become available
+      var pollInterval = setInterval(function() {
+        if (window.mainSocket) {
+          clearInterval(pollInterval);
+          socket = window.mainSocket;
+          if (socket.connected) {
+            socket.emit('register', userId);
+            if (window.__CHAT_CONVOS_CACHE__) {
+              renderConversations(window.__CHAT_CONVOS_CACHE__);
+            }
+          } else {
+            socket.once('connect', () => {
+              socket.emit('register', userId);
+              if (window.__CHAT_CONVOS_CACHE__) {
+                renderConversations(window.__CHAT_CONVOS_CACHE__);
+              }
+            });
+          }
+          socket.on('reconnect', () => {
+            socket.emit('register', userId);
+          });
+          registerChatHandlers(socket);
+        }
+      }, 200);
+      // Return a dummy object so calls don't crash
+      return { emit: function() {}, on: function() {}, connected: false };
     }
 
     // Register chat handlers only once - do NOT use off() to avoid removing other listeners
