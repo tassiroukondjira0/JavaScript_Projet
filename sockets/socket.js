@@ -1,7 +1,8 @@
 const { Server } = require('socket.io');
 
-// Simple userId -> socketId mapping for real-time notifications (Sprint 2)
-const userSockets = new Map();
+// Map of userId -> Set<socketId> so that a user is only considered offline when
+// ALL of their sockets disconnect (handles multiple tabs, reconnections, etc.).
+const userSockets = new Map(); // userId -> Set<socketId>
 
 function createSocketIO(httpServer, app) {
   const io = new Server(httpServer, {
@@ -12,7 +13,11 @@ function createSocketIO(httpServer, app) {
   });
 
   function broadcastOnlineUsers() {
-    const onlineIds = Array.from(userSockets.keys());
+    // A user is online if they have at least one socket in their set
+    const onlineIds = Array.from(userSockets.keys()).filter(id => {
+      const set = userSockets.get(id);
+      return set && set.size > 0;
+    });
     io.emit('online_users_list', onlineIds);
   }
 
@@ -20,7 +25,10 @@ function createSocketIO(httpServer, app) {
     // Client should emit: socket.emit('register', userId)
     socket.on('register', (userId) => {
       const uid = String(userId);
-      userSockets.set(uid, socket.id);
+      if (!userSockets.has(uid)) {
+        userSockets.set(uid, new Set());
+      }
+      userSockets.get(uid).add(socket.id);
       socket.data.userId = uid;
       // Join a room named "user-{id}" so controllers can emit to specific users
       // e.g. io.to(`user-${userId}`).emit('new_notification', {...})
@@ -30,8 +38,12 @@ function createSocketIO(httpServer, app) {
 
     socket.on('disconnect', () => {
       const uid = socket.data?.userId;
-      if (uid && userSockets.get(uid) === socket.id) {
-        userSockets.delete(uid);
+      if (uid && userSockets.has(uid)) {
+        const set = userSockets.get(uid);
+        set.delete(socket.id);
+        if (set.size === 0) {
+          userSockets.delete(uid);
+        }
         broadcastOnlineUsers();
       }
     });
@@ -42,7 +54,10 @@ function createSocketIO(httpServer, app) {
 
   function emitToUser(userId, event, data) {
     const uid = String(userId);
-    const socketId = userSockets.get(uid);
+    const set = userSockets.get(uid);
+    if (!set || set.size === 0) return false;
+    // Emit to the first available socket (or all, but one is sufficient)
+    const socketId = set.values().next().value;
     if (!socketId) return false;
     io.to(socketId).emit(event, data);
     return true;

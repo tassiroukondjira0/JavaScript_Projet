@@ -30,6 +30,11 @@
   <div id="header-placeholder"></div>
 
   <div class="fb-wrapper">
+    <!-- LEFT SIDEBAR - Shortcuts (Facebook-style) -->
+    <aside class="fb-left" aria-label="Raccourcis">
+      <%- include('./leftNav.ejs', { user: (typeof user !== 'undefined' ? user : null), currentPath: (typeof currentPath !== 'undefined' ? currentPath : '') }) %>
+    </aside>
+
     <!-- MAIN CONTENT - News Feed / Profile / etc. -->
     <main class="fb-main">
       <%- body %>

@@ -43,27 +43,38 @@ async function getMessages(req, res) {
 }
 
 async function postMessage(req, res) {
-  const senderId = req.session.user.id;
-  const conversationId = Number(req.params.conversationId);
-  const body = (req.body.body || '').trim();
-  if (!body) return res.status(400).json({ ok: false, error: 'body requis' });
+  try {
+    const senderId = req.session.user.id;
+    const conversationId = Number(req.params.conversationId);
+    const body = (req.body.body || '').trim();
+    if (!body) return res.status(400).json({ ok: false, error: 'body requis' });
 
-  await chatModel.addMessage({ conversationId, senderId, body });
-  await chatModel.markConversationRead({ conversationId, userId: senderId });
-  
-  // Emit to the other user via socket
-  const io = req.app.get('socketio');
-  const socketApi = req.app.get('socketApi');
-  if (socketApi) {
-    const convos = await chatModel.listConversations({ userId: senderId });
-    const convo = convos.find(c => Number(c.conversation_id) === Number(conversationId));
-    const other = convo?.other_user_id;
-    if (other) {
-      socketApi.emitToUser(other, 'chat:message', { conversationId, senderId: senderId, body });
+    await chatModel.addMessage({ conversationId, senderId, body });
+    // markConversationRead is non-blocking: a read-receipt failure should not
+    // prevent the message from being delivered to the client.
+    try {
+      await chatModel.markConversationRead({ conversationId, userId: senderId });
+    } catch (readErr) {
+      console.error('[postMessage] markConversationRead failed (non-blocking):', readErr.message || readErr);
     }
+
+    // Emit to the other user via socket
+    const io = req.app.get('socketio');
+    const socketApi = req.app.get('socketApi');
+    if (socketApi) {
+      const convos = await chatModel.listConversations({ userId: senderId });
+      const convo = convos.find(c => Number(c.conversation_id) === Number(conversationId));
+      const other = convo?.other_user_id;
+      if (other) {
+        socketApi.emitToUser(other, 'chat:message', { conversationId, senderId: senderId, body });
+      }
+    }
+
+    res.json({ ok: true, conversationId });
+  } catch (err) {
+    console.error('[postMessage] Error:', err.message || err);
+    res.status(500).json({ ok: false, error: 'Erreur serveur' });
   }
-  
-  res.json({ ok: true, conversationId });
 }
 
 

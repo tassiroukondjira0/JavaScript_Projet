@@ -18,16 +18,21 @@
     <script>
       async function refresh() {
         const res = await fetch('/notifications/list');
+        if (!res.ok) {
+          const list = document.getElementById('notifications-list-container');
+          if (list) list.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">Erreur de chargement</p>';
+          return;
+        }
         const data = await res.json();
         const list = document.getElementById('notifications-list-container');
         if (!list) return;
 
-        if (!data.notifications || data.notifications.length === 0) {
+        if (!data || !Array.isArray(data) || data.length === 0) {
           list.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">Aucune notification</p>';
           return;
         }
 
-        list.innerHTML = data.notifications.map(n => {
+        list.innerHTML = data.map(n => {
           const isUnread = n.is_read ? '' : 'unread';
           return '<div class="notification-item ' + isUnread + '">' +
             '<div class="notification-info"><div class="notification-text">' +

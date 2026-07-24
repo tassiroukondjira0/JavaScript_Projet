@@ -44,10 +44,23 @@
     bodyHtml += '</div>';
 
     if (connectedUser && connectedUser.id !== pUser.id) {
+      const fStatus = (typeof friendStatus !== 'undefined' && friendStatus) ? friendStatus : 'none';
       bodyHtml += "<div class=\"profile-actions\" style=\"display:flex;gap:8px;margin-top:12px;\">";
-      bodyHtml += "<button id=\"addFriendBtn\" class=\"btn btn-primary\" data-id=\"" + pUser.id + "\">" + addFriendText + "</button>";
+
+      if (fStatus === 'accepted') {
+        bodyHtml += "<button class=\"btn\" disabled>✅ Amis</button>";
+      } else if (fStatus === 'pending_sent') {
+        bodyHtml += "<button class=\"btn\" disabled>" + friendRequestSentText + "</button>";
+      } else if (fStatus === 'pending_received') {
+        bodyHtml += "<button id=\"acceptFriendBtn\" class=\"btn btn-primary\" data-id=\"" + pUser.id + "\">Accepter la demande</button>";
+      } else if (fStatus === 'blocked') {
+        bodyHtml += "<button class=\"btn\" disabled>Indisponible</button>";
+      } else {
+        bodyHtml += "<button id=\"addFriendBtn\" class=\"btn btn-primary\" data-id=\"" + pUser.id + "\">" + addFriendText + "</button>";
+      }
       bodyHtml += "<button id=\"sendMessageBtn\" class=\"btn\" data-id=\"" + pUser.id + "\" onclick=\"window.location.href='/messages?user=" + pUser.id + "'\">💬 Message</button>";
       bodyHtml += "</div>";
+
       bodyHtml += "<script>";
       bodyHtml += "const afb = document.getElementById(\"addFriendBtn\");";
       bodyHtml += "if (afb) {";
@@ -63,6 +76,21 @@
       bodyHtml += "} catch (e) {";
       bodyHtml += "afb.textContent = " + JSON.stringify(errorText) + ";";
       bodyHtml += "afb.disabled = false;";
+      bodyHtml += "}";
+      bodyHtml += "});";
+      bodyHtml += "}";
+      bodyHtml += "const acb = document.getElementById(\"acceptFriendBtn\");";
+      bodyHtml += "if (acb) {";
+      bodyHtml += "acb.addEventListener(\"click\", async () => {";
+      bodyHtml += "acb.disabled = true;";
+      bodyHtml += "try {";
+      bodyHtml += "const r = await fetch(\"/api/friends/respond\", { method: \"POST\", headers: { \"Content-Type\": \"application/json\" }, body: JSON.stringify({ sender_id: acb.dataset.id, accept: true }) });";
+      bodyHtml += "const json = await r.json();";
+      bodyHtml += "if (r.ok) { acb.textContent = \"✅ Amis\"; setTimeout(() => window.location.reload(), 800); }";
+      bodyHtml += "else { acb.textContent = json.error || " + JSON.stringify(errorText) + "; acb.disabled = false; }";
+      bodyHtml += "} catch (e) {";
+      bodyHtml += "acb.textContent = " + JSON.stringify(errorText) + ";";
+      bodyHtml += "acb.disabled = false;";
       bodyHtml += "}";
       bodyHtml += "});";
       bodyHtml += "}";
@@ -96,54 +124,66 @@
   bodyHtml += '</section>';
 
   // Load posts and friends via JS
-  bodyHtml += '<script>';
-  bodyHtml += '(async function() {';
-  bodyHtml += '  const userId = ' + (pUser ? pUser.id : 'null') + ';';
-  bodyHtml += '  const currentLang = "' + langLocale + '";';
-  bodyHtml += '  if (!userId) return;';
-  bodyHtml += '  function escapeHtml(str) { if (!str) return ""; const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }';
-  bodyHtml += '  function formatDate(d) { try { return new Date(d).toLocaleDateString(currentLang, { year:"numeric", month:"short", day:"numeric", hour:"2-digit", minute:"2-digit" }); } catch(e){return d;} }';
-  bodyHtml += '  // Load posts';
-  bodyHtml += '  try {';
-  bodyHtml += '    const pr = await fetch("/api/posts/user/" + userId);';
-  bodyHtml += '    const posts = await pr.json();';
-  bodyHtml += '    const pc = document.getElementById("profilePostsContainer");';
-  bodyHtml += '    const statPosts = document.getElementById("statPosts");';
-  bodyHtml += '    if (statPosts) statPosts.textContent = (posts && posts.length) || 0;';
-  bodyHtml += '    if (!posts || posts.length === 0) { pc.innerHTML = \'<p class="muted">Aucune publication.</p>\'; }';
-  bodyHtml += '    else {';
-  bodyHtml += '      pc.innerHTML = posts.map(function(p) {';
-  bodyHtml += '        return \'<article class="post" style="padding:12px 0;">\' +';
-bodyHtml += '          \'<div class="post-head"><div class="avatar avatar-sm"><img src="/uploads/\' + escapeHtml(p.profile_picture || "") + \'" onerror="this.parentNode.textContent=\'👤\'" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" /></div>\' +';
-  bodyHtml += '          \'<div><div class="post-user">\' + escapeHtml(p.fullname || "") + \'</div>\' +';
-  bodyHtml += '          \'<div class="post-date">\' + formatDate(p.created_at) + \'</div></div></div>\' +';
-  bodyHtml += '          (p.content ? \'<div class="post-content">\' + escapeHtml(p.content) + \'</div>\' : "") +';
-  bodyHtml += '          (p.image ? \'<img class="post-image" src="/uploads/\' + escapeHtml(p.image) + \'" alt="image" />\' : "") +';
-  bodyHtml += '        \'</article>\';';
-  bodyHtml += '      }).join(\'\');';
-  bodyHtml += '    }';
-  bodyHtml += '  } catch(e) { document.getElementById("profilePostsContainer").innerHTML = \'<p class="muted">Erreur chargement</p>\'; }';
-  bodyHtml += '  // Load friends';
-  bodyHtml += '  try {';
-  bodyHtml += '    const fr = await fetch("/api/friends/user/" + userId);';
-  bodyHtml += '    const friends = await fr.json();';
-  bodyHtml += '    const fc = document.getElementById("profileFriendsContainer");';
-  bodyHtml += '    const statFriends = document.getElementById("statFriends");';
-  bodyHtml += '    if (statFriends) statFriends.textContent = (friends && friends.length) || 0;';
-  bodyHtml += '    if (!friends || friends.length === 0) { fc.innerHTML = \'<p class="muted">Aucun ami.</p>\'; }';
-  bodyHtml += '    else {';
-  bodyHtml += '      fc.innerHTML = \'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">\' +';
-  bodyHtml += '        friends.map(function(f) {';
-  bodyHtml += '          var avatar = f.profile_picture ? "/uploads/" + escapeHtml(f.profile_picture) : "/images/default-avatar.svg";';
-  bodyHtml += '          return \'<a href="/profile/\' + f.id + \'" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none;color:var(--text);transition:background .15s;" onmouseover="this.style.background=\'var(--hover-bg)\'" onmouseout="this.style.background=\'transparent\'">\' +';
-  bodyHtml += '            \'<img src="\' + avatar + \'" onerror="this.src=\'/images/default-avatar.svg\'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />\' +';
-  bodyHtml += '            \'<span style="font-weight:600;font-size:13px;">\' + escapeHtml(f.fullname) + \'</span>\' +';
-  bodyHtml += '          \'</a>\';';
-  bodyHtml += '        }).join(\'\') + \'</div>\';';
-  bodyHtml += '    }';
-  bodyHtml += '  } catch(e) { document.getElementById("profileFriendsContainer").innerHTML = \'<p class="muted">Erreur chargement</p>\'; }';
-  bodyHtml += '})();';
-  bodyHtml += '</script>';
+  bodyHtml += `
+<script>
+(async function() {
+  const userId = ${pUser ? pUser.id : 'null'};
+  const currentLang = "${langLocale}";
+  if (!userId) return;
+  function escapeHtml(str) { if (!str) return ""; const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
+  function formatDate(d) { try { return new Date(d).toLocaleDateString(currentLang, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); } catch (e) { return d; } }
+
+  // Load posts
+  try {
+    const pr = await fetch("/api/posts/user/" + userId);
+    const posts = await pr.json();
+    const pc = document.getElementById("profilePostsContainer");
+    const statPosts = document.getElementById("statPosts");
+    if (statPosts) statPosts.textContent = (posts && posts.length) || 0;
+    if (!posts || posts.length === 0) {
+      pc.innerHTML = "<p class='muted'>Aucune publication.</p>";
+    } else {
+      pc.innerHTML = posts.map(function(p) {
+        var avatarInner = p.profile_picture
+          ? "<img src='/uploads/" + escapeHtml(p.profile_picture) + "' alt='avatar' style='width:100%;height:100%;border-radius:50%;object-fit:cover;' onerror=\\"this.style.display='none'\\" />"
+          : "👤";
+        return "<article class='post' style='padding:12px 0;'>" +
+          "<div class='post-head'><div class='avatar avatar-sm'>" + avatarInner + "</div>" +
+          "<div><div class='post-user'>" + escapeHtml(p.fullname || "") + "</div>" +
+          "<div class='post-date'>" + formatDate(p.created_at) + "</div></div></div>" +
+          (p.content ? "<div class='post-content'>" + escapeHtml(p.content) + "</div>" : "") +
+          (p.image ? "<img class='post-image' src='/uploads/" + escapeHtml(p.image) + "' alt='image' />" : "") +
+        "</article>";
+      }).join("");
+    }
+  } catch (e) {
+    document.getElementById("profilePostsContainer").innerHTML = "<p class='muted'>Erreur chargement</p>";
+  }
+
+  // Load friends
+  try {
+    const fr = await fetch("/api/friends/user/" + userId);
+    const friends = await fr.json();
+    const fc = document.getElementById("profileFriendsContainer");
+    const statFriends = document.getElementById("statFriends");
+    if (statFriends) statFriends.textContent = (friends && friends.length) || 0;
+    if (!friends || friends.length === 0) {
+      fc.innerHTML = "<p class='muted'>Aucun ami.</p>";
+    } else {
+      fc.innerHTML = "<div style='display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;'>" +
+        friends.map(function(f) {
+          var avatar = f.profile_picture ? "/uploads/" + escapeHtml(f.profile_picture) : "/images/default-avatar.svg";
+          return "<a href='/profile/" + f.id + "' class='search-result-item' style='display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none;color:var(--text);'>" +
+            "<img src='" + avatar + "' alt='avatar' style='width:36px;height:36px;border-radius:50%;object-fit:cover;' onerror=\\"this.src='/images/default-avatar.svg'\\" />" +
+            "<span style='font-weight:600;font-size:13px;'>" + escapeHtml(f.fullname) + "</span>" +
+          "</a>";
+        }).join("") + "</div>";
+    }
+  } catch (e) {
+    document.getElementById("profileFriendsContainer").innerHTML = "<p class='muted'>Erreur chargement</p>";
+  }
+})();
+<\/script>`;
 
   bodyHtml += '<style>.profile-cover{height:200px;background:linear-gradient(100deg,var(--primary-700),var(--accent));background-size:cover;background-position:center;border-radius:12px;margin-bottom:10px}.profile-avatar img{width:96px;height:96px;border-radius:50%;border:3px solid var(--card);margin-top:-48px;display:block;object-fit:cover}.profile-body{margin-top:10px}.profile-body h3{margin:0}.profile-form{margin-top:24px;border-top:1px solid var(--border);padding-top:18px}.profile-form h3{margin:0 0 16px}.profile-form textarea{min-height:80px;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text);margin:8px 0 12px;font-family:inherit}.profile-form label{color:var(--muted);font-size:13px;display:block;margin-top:8px}</style>';
   bodyHtml += '</main>';

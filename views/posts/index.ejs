@@ -94,9 +94,9 @@
   bodyHtml += '</div>';
 
   // Posts feed
-  bodyHtml += '<section class="card" id="postsFeed">';
+  bodyHtml += '<section class="posts-feed" id="postsFeed">';
   if (!posts || posts.length === 0) {
-    bodyHtml += '<p class="muted">Aucune publication pour le moment.</p>';
+    bodyHtml += '<div class="card"><p class="muted">Aucune publication pour le moment.</p></div>';
   } else {
     posts.forEach(p => {
       // Determine media type for filtering
@@ -134,6 +134,9 @@
         bodyHtml += '<video class="post-video" src="/uploads/' + p.video + '" controls style="width:100%;max-height:480px;border-radius:var(--radius);margin-top:8px;background:#000;" onerror="this.style.display=\'none\'"></video>';
       }
       
+      // Reaction summary (counts row, sits above the divider/buttons like Facebook)
+      bodyHtml += '<div class="reaction-summary" data-post="' + p.id + '"></div>';
+
       // Action buttons bar (Facebook style)
       bodyHtml += '<div class="post-actions-bar">';
       
@@ -167,9 +170,6 @@
       bodyHtml += '</button>';
 
       bodyHtml += '</div>';
-
-      // Reaction summary
-      bodyHtml += '<div class="reaction-summary" data-post="' + p.id + '" style="font-size:13px;color:var(--muted);padding:4px 0;"></div>';
 
       // Comments section (initially hidden)
       bodyHtml += '<div class="comments-section" data-post="' + p.id + '" style="display:none;border-top:1px solid var(--border);padding-top:8px;margin-top:4px;">';

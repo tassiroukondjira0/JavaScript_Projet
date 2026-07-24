@@ -37,7 +37,13 @@ function registerChat(io, socketApi) {
         if (image) msgData.image = image;
         
         await chatModel.addMessage(msgData);
-        await chatModel.markConversationRead({ conversationId: convId, userId: senderId });
+        // markConversationRead is non-blocking: a read-receipt failure should not
+        // prevent the message from being delivered to the client.
+        try {
+          await chatModel.markConversationRead({ conversationId: convId, userId: senderId });
+        } catch (readErr) {
+          console.error('[chat:send] markConversationRead failed (non-blocking):', readErr.message || readErr);
+        }
 
         // Infer other user to deliver socket message
         // Get other user ID from conversation participants
@@ -66,7 +72,7 @@ function registerChat(io, socketApi) {
 
         return cb && cb({ ok: true, conversationId: convId });
       } catch (e) {
-        console.error(e);
+        console.error('[chat:send] Error:', e.message || e);
         return cb && cb({ ok: false, error: 'server error' });
       }
     });

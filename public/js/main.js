@@ -103,19 +103,16 @@ async function initMainPage() {
     // 3. Render Right Sidebar
     renderRightSidebar();
 
-    // 4. Inject search bar above the main content area (like Facebook)
-    injectSearchBar();
-
-    // 5. Connect to Socket.IO
+    // 4. Connect to Socket.IO
     initSocket();
 
-    // 6. Load initial notifications
+    // 5. Load initial notifications
     loadNotifications();
 
-    // 7. Setup search functionality
+    // 6. Setup search functionality
     initSearch();
 
-    // 8. Update unread badges (notifications/messages)
+    // 7. Update unread badges (notifications/messages)
     updateNavBadges();
   } catch (err) {
     console.error('Error initializing layout:', err);
@@ -149,8 +146,13 @@ function renderTopHeader() {
         <a href="/posts" class="fb-header-logo">Djokko</a>
       </div>
 
-      <!-- Center: Navigation icons -->
+      <!-- Center: Search bar + Navigation icons -->
       <div class="fb-header-center">
+        <div class="fb-search-wrap">
+          <svg class="fb-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="global-search-input" class="fb-search-input" placeholder="Rechercher sur Djokko" />
+          <div id="search-results-dropdown" class="search-results-dropdown"></div>
+        </div>
         <nav class="fb-header-nav">
           <a href="/posts" class="fb-nav-btn ${isActive('/posts')}" title="Accueil">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
@@ -298,8 +300,12 @@ function initSocket() {
 
   window.mainSocket = io();
 
-  // Register user id
-  window.mainSocket.emit('register', window.currentUser.id);
+  // Register user id on initial connect AND on reconnect (otherwise the user
+  // is removed from userSockets on disconnect but never re-added, causing them
+  // to appear offline to friends).
+  window.mainSocket.on('connect', () => {
+    window.mainSocket.emit('register', window.currentUser.id);
+  });
 
   // Online users list update
   window.mainSocket.on('online_users_list', (activeIds) => {
@@ -335,7 +341,15 @@ async function loadNotifications() {
 
   try {
     const res = await fetch('/api/notifications');
+    if (!res.ok) {
+      console.error('[loadNotifications] HTTP', res.status);
+      return;
+    }
     const notifs = await res.json();
+    if (!Array.isArray(notifs)) {
+      console.error('[loadNotifications] Invalid response:', notifs);
+      return;
+    }
 
     // Render for legacy container (e.g. notifications page)
     if (container) {
@@ -427,8 +441,16 @@ async function updateOnlineFriends(activeIds) {
 
   try {
     const res = await fetch('/api/friends/list');
+    if (!res.ok) {
+      console.error('[updateOnlineFriends] HTTP', res.status);
+      return;
+    }
     const friends = await res.json();
-    const onlineFriends = friends.filter(f => activeIds.includes(f.id));
+    if (!Array.isArray(friends)) {
+      console.error('[updateOnlineFriends] Invalid response:', friends);
+      return;
+    }
+    const onlineFriends = friends.filter(f => activeIds.map(String).includes(String(f.id)));
 
     if (countBadge) countBadge.textContent = onlineFriends.length;
 
@@ -452,26 +474,6 @@ async function updateOnlineFriends(activeIds) {
   } catch (err) {
     console.error('Error updating online friends:', err);
   }
-}
-
-// Inject search bar above the main content area (like Facebook)
-function injectSearchBar() {
-  const mainContent = document.querySelector('.fb-main');
-  if (!mainContent) return;
-  
-  // Only inject if not already present
-  if (document.getElementById('global-search-input')) return;
-  
-  const searchBar = document.createElement('div');
-  searchBar.className = 'fb-main-search';
-  searchBar.innerHTML = `
-    <div class="fb-search-wrap" style="position:relative; max-width:100%;">
-      <svg class="fb-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <input type="text" id="global-search-input" class="fb-search-input" placeholder="Rechercher sur Djokko" />
-      <div id="search-results-dropdown" class="search-results-dropdown"></div>
-    </div>
-  `;
-  mainContent.prepend(searchBar);
 }
 
 // Initialize search functionality
