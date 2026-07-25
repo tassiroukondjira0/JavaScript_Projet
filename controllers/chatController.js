@@ -58,15 +58,40 @@ async function postMessage(req, res) {
       console.error('[postMessage] markConversationRead failed (non-blocking):', readErr.message || readErr);
     }
 
-    // Emit to the other user via socket
+    // Emit to the other user via socket (broadcast to all their sockets via room)
     const io = req.app.get('socketio');
-    const socketApi = req.app.get('socketApi');
-    if (socketApi) {
+    if (io) {
       const convos = await chatModel.listConversations({ userId: senderId });
       const convo = convos.find(c => Number(c.conversation_id) === Number(conversationId));
       const other = convo?.other_user_id;
       if (other) {
-        socketApi.emitToUser(other, 'chat:message', { conversationId, senderId: senderId, body });
+        io.to(`user-${other}`).emit('chat:message', { conversationId, senderId: senderId, body });
+        
+        // Create notification for the message
+        try {
+          const Notification = require('../models/notificationModel');
+          const User = require('../models/userModel');
+          const senderUser = await User.findById(senderId);
+          const notifId = await Notification.create({
+            receiver_id: other,
+            sender_id: senderId,
+            type: 'message',
+            entity_id: senderId
+          });
+          
+          if (notifId) {
+            io.to(`user-${other}`).emit('new_notification', {
+              id: notifId,
+              type: 'message',
+              sender_name: senderUser?.fullname || 'Quelqu\'un',
+              sender_picture: senderUser?.profile_picture || null,
+              entity_id: senderId,
+              created_at: new Date().toISOString()
+            });
+          }
+        } catch (notifErr) {
+          console.error('[postMessage] Notification creation failed (non-blocking):', notifErr.message || notifErr);
+        }
       }
     }
 

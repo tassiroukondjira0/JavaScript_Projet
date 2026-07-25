@@ -109,6 +109,9 @@ async function setRole(req, res) {
   const { role } = req.body;
   const db = getDB();
   try {
+    const [uRows] = await db.execute('SELECT role FROM users WHERE id=? LIMIT 1', [userId]);
+    if (!uRows || !uRows.length) return res.status(404).json({ error: 'Utilisateur introuvable' });
+    if (uRows[0].role === 'SUPER_ADMIN') return res.status(403).json({ error: "Impossible de modifier le rôle du Super Admin" });
     await db.execute('UPDATE users SET role=? WHERE id=?', [role, userId]);
     res.json({ ok: true });
   } catch (e) {

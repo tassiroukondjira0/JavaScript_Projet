@@ -117,6 +117,7 @@ router.post('/likes/toggle', requireLogin, likeController.toggleLike);
 // ----------------------------------------------------
 router.post('/reactions/toggle', requireLogin, reactionController.toggleReaction);
 router.get('/reactions/counts', requireLogin, reactionController.getReactionCounts);
+router.get('/reactions/who', requireLogin, reactionController.getWhoReacted);
 
 // ----------------------------------------------------
 // FRIENDS ROUTES

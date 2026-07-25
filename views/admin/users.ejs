@@ -37,14 +37,18 @@
       bodyHtml += '<td style="padding:10px 8px;border-bottom:1px solid var(--border);"><strong>' + (u.fullname || 'Inconnu') + '</strong></td>';
       bodyHtml += '<td style="padding:10px 8px;border-bottom:1px solid var(--border);">' + (u.email || '') + '</td>';
       bodyHtml += '<td style="padding:10px 8px;border-bottom:1px solid var(--border);">';
-      bodyHtml += '<form method="POST" action="/admin/crud/users/' + u.id + '/role" style="display:inline-flex;gap:4px;align-items:center;">';
-      bodyHtml += '<select name="role" class="input" style="padding:4px 8px;font-size:12px;width:auto;">';
-      ['USER','ADMIN','SUPER_ADMIN'].forEach(r => {
-        bodyHtml += '<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + r + '</option>';
-      });
-      bodyHtml += '</select>';
-      bodyHtml += '<button class="btn btn-sm" type="submit" style="padding:4px 8px;font-size:12px;">OK</button>';
-      bodyHtml += '</form>';
+      if (isSuperAdmin) {
+        bodyHtml += '<span class="muted" style="font-size:12px;">' + u.role + '</span>';
+      } else {
+        bodyHtml += '<form method="POST" action="/admin/crud/users/' + u.id + '/role" style="display:inline-flex;gap:4px;align-items:center;">';
+        bodyHtml += '<select name="role" class="input" style="padding:4px 8px;font-size:12px;width:auto;">';
+        ['USER','ADMIN'].forEach(r => {
+          bodyHtml += '<option value="' + r + '"' + (u.role === r ? ' selected' : '') + '>' + r + '</option>';
+        });
+        bodyHtml += '</select>';
+        bodyHtml += '<button class="btn btn-sm" type="submit" style="padding:4px 8px;font-size:12px;">OK</button>';
+        bodyHtml += '</form>';
+      }
       bodyHtml += '</td>';
       bodyHtml += '<td style="padding:10px 8px;border-bottom:1px solid var(--border);"><span style="color:' + statusColor + ';font-weight:500;">' + statusLabel + '</span></td>';
       bodyHtml += '<td style="padding:10px 8px;border-bottom:1px solid var(--border);">';
@@ -72,8 +76,8 @@
   bodyHtml += '</main>';
 
   bodyHtml += '<script>';
-  bodyHtml += 'document.querySelectorAll(".suspend-btn").forEach(btn => {';
-  bodyHtml += 'btn.addEventListener("click", async () => {';
+  bodyHtml += "document.querySelectorAll('.suspend-btn').forEach(btn => {";
+  bodyHtml += "btn.addEventListener('click', async () => {";
   bodyHtml += 'if (!confirm("Suspendre cet utilisateur ?")) return;';
   bodyHtml += 'try {';
   bodyHtml += 'const r = await fetch("/api/admin/users/" + btn.dataset.id + "/suspend", { method: "PUT" });';
@@ -83,8 +87,8 @@
   bodyHtml += '});';
   bodyHtml += '});';
 
-  bodyHtml += 'document.querySelectorAll(".reactivate-btn").forEach(btn => {';
-  bodyHtml += 'btn.addEventListener("click", async () => {';
+  bodyHtml += "document.querySelectorAll('.reactivate-btn').forEach(btn => {";
+  bodyHtml += "btn.addEventListener('click', async () => {";
   bodyHtml += 'if (!confirm("Réactiver cet utilisateur ?")) return;';
   bodyHtml += 'try {';
   bodyHtml += 'const r = await fetch("/api/admin/users/" + btn.dataset.id + "/reactivate", { method: "PUT" });';
@@ -94,9 +98,9 @@
   bodyHtml += '});';
   bodyHtml += '});';
 
-  bodyHtml += 'document.querySelectorAll(".delete-btn").forEach(btn => {';
-  bodyHtml += 'btn.addEventListener("click", async () => {';
-  bodyHtml += 'const name = btn.dataset.name;';
+  bodyHtml += "document.querySelectorAll('.delete-btn').forEach(btn => {";
+  bodyHtml += "btn.addEventListener('click', async () => {";
+  bodyHtml += "const name = btn.dataset.name;";
   bodyHtml += 'if (!confirm("Supprimer définitivement l\'utilisateur " + name + " ? Cette action est irréversible.")) return;';
   bodyHtml += 'if (!confirm("Confirmer la suppression de " + name + " ?")) return;';
   bodyHtml += 'try {';

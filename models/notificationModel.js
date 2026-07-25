@@ -12,6 +12,7 @@ const TYPE_MAP = {
   'reply': 'NEW_COMMENT',
   'comment_reply': 'NEW_COMMENT',
   'friend_request': 'NEW_FRIEND_REQUEST',
+  'friend_accept': 'NEW_FRIEND_REQUEST',
   'message': 'NEW_MESSAGE',
   // Already valid:
   'NEW_COMMENT': 'NEW_COMMENT',

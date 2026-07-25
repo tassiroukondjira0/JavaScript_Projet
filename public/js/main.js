@@ -323,7 +323,6 @@ function initSocket() {
   // Friend relation update
   window.mainSocket.on('friendship_updated', () => {
     document.dispatchEvent(new CustomEvent('friendship_changed'));
-    window.mainSocket.emit('register', window.currentUser.id);
   });
 
   // Private messages trigger
@@ -361,12 +360,21 @@ window.loadNotifications = async function loadNotifications() {
           let text = '';
           let targetUrl = '#';
           const senderName = `<span>${n.sender_name}</span>`;
+          // entity_id for reactions/comments/shares = post_id
+          // entity_id for friend_accept = user_id who accepted
+          // entity_id for messages = sender_id (chat partner)
           switch (n.type) {
-            case 'like': icon = '❤️'; text = `${senderName} a aimé votre publication.`; targetUrl = `/#post-${n.entity_id}`; break;
-            case 'comment': icon = '💬'; text = `${senderName} a commenté votre publication.`; targetUrl = `/#post-${n.entity_id}`; break;
-            case 'friend_request': icon = '👥'; text = `${senderName} vous a envoyé une demande d'ami.`; targetUrl = '/friends'; break;
+            case 'like':
+            case 'reaction':
+            case 'NEW_REACTION': icon = '❤️'; text = `${senderName} a aimé votre publication.`; targetUrl = `/posts#post-${n.entity_id}`; break;
+            case 'comment':
+            case 'NEW_COMMENT': icon = '💬'; text = `${senderName} a commenté votre publication.`; targetUrl = `/posts#post-${n.entity_id}`; break;
+            case 'share': icon = '🔄'; text = `${senderName} a partagé votre publication.`; targetUrl = `/posts#post-${n.entity_id}`; break;
+            case 'friend_request':
+            case 'NEW_FRIEND_REQUEST': icon = '👥'; text = `${senderName} vous a envoyé une demande d'ami.`; targetUrl = '/friends'; break;
             case 'friend_accept': icon = '✅'; text = `${senderName} a accepté votre demande d'ami.`; targetUrl = `/profile/${n.entity_id}`; break;
-            case 'message': icon = '✉️'; text = `${senderName} vous a envoyé un message.`; targetUrl = '/messages'; break;
+            case 'message':
+            case 'NEW_MESSAGE': icon = '✉️'; text = `${senderName} vous a envoyé un message.`; targetUrl = `/messages?user=${n.entity_id}`; break;
           }
           const avatarSrc = n.sender_picture ? `/uploads/${n.sender_picture}` : '/images/default-avatar.svg';
           return `<div class="notification-item ${n.is_read ? '' : 'unread'}" data-id="${n.id}" data-url="${targetUrl}">
@@ -387,11 +395,17 @@ window.loadNotifications = async function loadNotifications() {
         fbContainer.innerHTML = notifs.slice(0, 5).map(n => {
           let text = '';
           switch (n.type) {
-            case 'like': text = `a aimé votre publication.`; break;
-            case 'comment': text = `a commenté votre publication.`; break;
-            case 'friend_request': text = `vous a envoyé une demande d'ami.`; break;
+            case 'like':
+            case 'reaction':
+            case 'NEW_REACTION': text = `a aimé votre publication.`; break;
+            case 'comment':
+            case 'NEW_COMMENT': text = `a commenté votre publication.`; break;
+            case 'friend_request':
+            case 'NEW_FRIEND_REQUEST': text = `vous a envoyé une demande d'ami.`; break;
             case 'friend_accept': text = `a accepté votre demande d'ami.`; break;
-            case 'message': text = `vous a envoyé un message.`; break;
+            case 'message':
+            case 'NEW_MESSAGE': text = `vous a envoyé un message.`; break;
+            case 'share': text = `a partagé votre publication.`; break;
             default: text = `a envoyé une mise à jour.`; break;
           }
           const avatarSrc = n.sender_picture ? `/uploads/${n.sender_picture}` : '/images/default-avatar.svg';
@@ -417,6 +431,116 @@ window.loadNotifications = async function loadNotifications() {
     console.error('Error loading notifications:', err);
   }
 }
+
+// Fetch and render user activity log - exposed globally for activity page
+window.loadActivity = async function loadActivity() {
+  const container = document.getElementById('activity-list-container');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/activity');
+    if (!res.ok) {
+      console.error('[loadActivity] HTTP', res.status);
+      container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">Erreur lors du chargement de l\'activité.</p>';
+      return;
+    }
+    const activities = await res.json();
+    if (!Array.isArray(activities)) {
+      console.error('[loadActivity] Invalid response:', activities);
+      container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">Aucune activité</p>';
+      return;
+    }
+
+    if (activities.length === 0) {
+      container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">Aucune activité</p>';
+      return;
+    }
+
+    container.innerHTML = activities.map(a => {
+      let icon = '📝';
+      let text = '';
+      const date = new Date(a.created_at).toLocaleString('fr-FR', {
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+      });
+
+      switch (a.type) {
+        case 'post_create':
+        case 'post':
+          icon = '📝';
+          text = 'a créé une publication.';
+          break;
+        case 'post_update':
+          icon = '✏️';
+          text = 'a modifié une publication.';
+          break;
+        case 'post_delete':
+          icon = '🗑️';
+          text = 'a supprimé une publication.';
+          break;
+        case 'comment_create':
+        case 'comment':
+          icon = '💬';
+          text = 'a commenté une publication.';
+          break;
+        case 'comment_delete':
+          icon = '🗑️';
+          text = 'a supprimé un commentaire.';
+          break;
+        case 'like':
+        case 'reaction':
+          icon = '❤️';
+          text = 'a aimé une publication.';
+          break;
+        case 'share':
+          icon = '🔄';
+          text = 'a partagé une publication.';
+          break;
+        case 'friend_request':
+          icon = '👥';
+          text = 'a envoyé une demande d\'ami.';
+          break;
+        case 'friend_accept':
+          icon = '✅';
+          text = 'a accepté une demande d\'ami.';
+          break;
+        case 'friend_remove':
+          icon = '❌';
+          text = 'a supprimé un ami.';
+          break;
+        case 'message':
+          icon = '✉️';
+          text = 'a envoyé un message.';
+          break;
+        case 'login':
+          icon = '🔑';
+          text = 's\'est connecté(e).';
+          break;
+        case 'profile_update':
+          icon = '👤';
+          text = 'a mis à jour son profil.';
+          break;
+        default:
+          icon = '📋';
+          text = a.type ? `a effectué une action: ${a.type}` : 'a effectué une action.';
+      }
+
+      const details = a.details ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">${a.details}</div>` : '';
+
+      return `<div class="activity-item" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-color);">
+        <div style="font-size:1.2rem;">${icon}</div>
+        <div style="flex:1;">
+          <div style="font-size:0.95rem;"><strong>${a.user_name || 'Utilisateur'}</strong> ${text}</div>
+          ${details}
+          <div style="font-size:0.75rem;color:var(--text-muted);">${date}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    console.error('Error loading activity:', err);
+    container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">Erreur lors du chargement de l\'activité.</p>';
+  }
+}
+
 // Format time
 function formatTime(isoString) {
   const date = new Date(isoString);
@@ -500,16 +624,11 @@ function initSearch() {
         } else {
            dropdown.innerHTML = users.map(u => {
             const avatarSrc = u.profile_picture ? `/uploads/${u.profile_picture}` : '/images/default-avatar.svg';
-            const isPrivileged = window.currentUser && (window.currentUser.is_admin || window.currentUser.is_super_admin);
-            const emailLine = (isPrivileged && u.email)
-              ? `<span style="font-size: 0.75rem; color: var(--text-muted);">${u.email}</span>`
-              : `<span style="font-size: 0.75rem; color: var(--text-muted);">@${u.id}</span>`;
             return `
               <a href="/profile/${u.id}" class="search-result-item">
                 <img src="${avatarSrc}" onerror="this.src='/images/default-avatar.svg'" alt="Avatar" class="avatar avatar-sm">
                 <div style="display: flex; flex-direction: column;">
                   <span style="font-weight: 600; font-size: 0.9rem;">${u.fullname}</span>
-                  ${emailLine}
                 </div>
               </a>
             `;
@@ -542,7 +661,7 @@ async function updateNavBadges() {
     const notifs = await res.json();
 
     const unreadNotifs = notifs.filter(n => !n.is_read);
-    const unreadMessages = unreadNotifs.filter(n => n.type === 'message');
+    const unreadMessages = unreadNotifs.filter(n => n.type === 'message' || n.type === 'NEW_MESSAGE');
 
     const setBadge = (el, value) => {
       if (!el) return;
@@ -587,21 +706,36 @@ function showNotificationToast(notif) {
   toast.style.width = '300px';
 
   let text = '';
+  let clickUrl = null;
   switch (notif.type) {
     case 'like':
+    case 'reaction':
+    case 'NEW_REACTION':
       text = `<strong>${notif.sender_name}</strong> a aimé votre publication.`;
+      clickUrl = `/posts#post-${notif.entity_id}`;
       break;
     case 'comment':
+    case 'NEW_COMMENT':
       text = `<strong>${notif.sender_name}</strong> a commenté votre publication.`;
+      clickUrl = `/posts#post-${notif.entity_id}`;
       break;
     case 'friend_request':
+    case 'NEW_FRIEND_REQUEST':
       text = `<strong>${notif.sender_name}</strong> vous a envoyé une demande d'ami.`;
+      clickUrl = '/friends';
       break;
     case 'friend_accept':
       text = `<strong>${notif.sender_name}</strong> a accepté votre demande d'ami.`;
+      clickUrl = `/profile/${notif.entity_id}`;
       break;
     case 'message':
+    case 'NEW_MESSAGE':
       text = `<strong>${notif.sender_name}</strong> vous a envoyé un message.`;
+      clickUrl = `/messages?user=${notif.entity_id}`;
+      break;
+    case 'share':
+      text = `<strong>${notif.sender_name}</strong> a partagé votre publication.`;
+      clickUrl = `/posts#post-${notif.entity_id}`;
       break;
     case 'idle_logout':
       text = `Vous avez été déconnecté(e) automatiquement après 3 minutes d'inactivité.`;
@@ -617,6 +751,14 @@ function showNotificationToast(notif) {
     <img src="${avatarSrc}" onerror="this.src='/images/default-avatar.svg'" alt="Avatar" class="avatar avatar-sm">
     <div style="flex: 1; font-size: 0.85rem; line-height: 1.4;">${text}</div>
   `;
+
+  // Make toast clickable to redirect to the relevant page
+  if (clickUrl) {
+    toast.style.cursor = 'pointer';
+    toast.addEventListener('click', () => {
+      window.location.href = clickUrl;
+    });
+  }
 
   container.appendChild(toast);
 

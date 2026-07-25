@@ -5,19 +5,121 @@
   currentPath: '/friends',
   body: `
     <section class="card">
-      <h2>Rechercher des amis</h2>
-      <input id="searchInput" placeholder="Rechercher par nom..." />
+      <h2>Mes amis</h2>
+      <input id="searchInput" placeholder="Rechercher parmi mes amis..." />
+      <div id="friendsList" style="margin-top:10px;"></div>
+      <hr style="margin:16px 0;" />
+      <h2>Rechercher des utilisateurs</h2>
+      <input id="searchAllInput" placeholder="Rechercher par nom..." />
       <div id="results" style="margin-top:10px;"></div>
     </section>
 
     <script>
-      const input = document.getElementById('searchInput');
-      const results = document.getElementById('results');
       const currentUserId = window.__DJOKKO_USER__ ? window.__DJOKKO_USER__.id : null;
-      const isPrivileged = window.__DJOKKO_USER__ && (window.__DJOKKO_USER__.is_admin || window.__DJOKKO_USER__.is_super_admin);
 
-      input.addEventListener('input', async () => {
-        const q = input.value.trim();
+      // ---------- Load & display friends list ----------
+      let myFriends = [];
+      let myPendingReceived = {};  // sender_id -> true
+      let myPendingSent = {};      // receiver_id -> true
+
+      async function loadFriendsData() {
+        try {
+          // Load friends list
+          const friendsRes = await fetch('/api/friends/list');
+          if (friendsRes.ok) {
+            myFriends = await friendsRes.json();
+          }
+
+          // Load pending requests received
+          const pendingRes = await fetch('/api/friends/pending');
+          if (pendingRes.ok) {
+            const pendingList = await pendingRes.json();
+            myPendingReceived = {};
+            pendingList.forEach(p => { myPendingReceived[p.user_id] = true; });
+          }
+
+          // Load sent requests
+          const sentRes = await fetch('/api/friends/sent');
+          if (sentRes.ok) {
+            const sentList = await sentRes.json();
+            myPendingSent = {};
+            sentList.forEach(p => { myPendingSent[p.user_id] = true; });
+          }
+
+          renderFriendsList(myFriends);
+        } catch (err) {
+          console.error('Error loading friends data:', err);
+        }
+      }
+
+      function renderFriendsList(friends) {
+        const container = document.getElementById('friendsList');
+        if (!friends || friends.length === 0) {
+          container.innerHTML = '<p class="muted">Vous n\'avez pas encore d\'amis.</p>';
+          return;
+        }
+        container.innerHTML = friends.map(u => {
+          const avatar = u.profile_picture ? '/uploads/' + u.profile_picture : '/images/default-avatar.svg';
+          return '<div class="search-result-row" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">' +
+            '<a href="/profile/' + u.id + '" style="flex:1;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;">' +
+            '<img src="' + avatar + '" onerror="this.src=\'/images/default-avatar.svg\'" alt="avatar" class="avatar avatar-sm" />' +
+            '<span><strong>' + u.fullname + '</strong><br/><span class="muted">Amis</span></span></a>' +
+            '</div>';
+        }).join('');
+      }
+
+      // Filter friends list as the user types
+      const friendSearchInput = document.getElementById('searchInput');
+      friendSearchInput.addEventListener('input', () => {
+        const q = friendSearchInput.value.trim().toLowerCase();
+        if (!q) {
+          renderFriendsList(myFriends);
+          return;
+        }
+        const filtered = myFriends.filter(u =>
+          u.fullname && u.fullname.toLowerCase().includes(q)
+        );
+        renderFriendsList(filtered);
+        if (filtered.length === 0) {
+          document.getElementById('friendsList').innerHTML = '<p class="muted">Aucun ami correspondant à votre recherche.</p>';
+        }
+      });
+
+      // ---------- Search all users ----------
+      const searchAllInput = document.getElementById('searchAllInput');
+      const results = document.getElementById('results');
+
+      function isFriend(userId) {
+        return myFriends.some(f => String(f.id) === String(userId));
+      }
+
+      function isPendingReceived(userId) {
+        return !!myPendingReceived[userId];
+      }
+
+      function isPendingSent(userId) {
+        return !!myPendingSent[userId];
+      }
+
+      function getActionButton(u) {
+        const id = u.id;
+        const isSelf = Number(id) === Number(currentUserId);
+        if (isSelf) return '';
+
+        if (isFriend(id)) {
+          return '<span class="muted" style="font-size:13px;">✓ Amis</span>';
+        }
+        if (isPendingReceived(id)) {
+          return '<span class="muted" style="font-size:13px;">Demande reçue</span>';
+        }
+        if (isPendingSent(id)) {
+          return '<span class="muted" style="font-size:13px;">Demande envoyée</span>';
+        }
+        return '<button class="btn btn-primary btn-sm add-friend-btn" data-id="' + id + '">Ajouter en ami</button>';
+      }
+
+      searchAllInput.addEventListener('input', async () => {
+        const q = searchAllInput.value.trim();
         if (q.length < 2) { results.innerHTML = ''; return; }
         try {
           const res = await fetch('/users/search/api?q=' + encodeURIComponent(q));
@@ -29,19 +131,12 @@
 
           results.innerHTML = data.map(u => {
             const avatar = u.profile_picture ? '/uploads/' + u.profile_picture : '/images/default-avatar.svg';
-            const emailLine = (isPrivileged && u.email)
-              ? '<span class="muted">' + u.email + '</span>'
-              : '<span class="muted">@' + u.id + '</span>';
-
-            const isSelf = Number(u.id) === Number(currentUserId);
-            const action = isSelf
-              ? ''
-              : '<button class="btn btn-primary btn-sm add-friend-btn" data-id="' + u.id + '">Ajouter en ami</button>';
+            const action = getActionButton(u);
 
             return '<div class="search-result-row" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">' +
               '<a href="/profile/' + u.id + '" style="flex:1;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;">' +
               '<img src="' + avatar + '" onerror="this.src=\'/images/default-avatar.svg\'" alt="avatar" class="avatar avatar-sm" />' +
-              '<span><strong>' + u.fullname + '</strong><br/>' + emailLine + '</span></a>' + action +
+              '<span><strong>' + u.fullname + '</strong></span></a>' + action +
               '</div>';
           }).join('');
 
@@ -59,6 +154,8 @@
                 const json = await r.json();
                 if (r.ok) {
                   e.currentTarget.textContent = 'Demande envoyée ✓';
+                  // Reload friends data to update statuses
+                  loadFriendsData();
                 } else {
                   e.currentTarget.textContent = json.error || 'Erreur';
                   e.currentTarget.disabled = false;
@@ -74,6 +171,9 @@
           results.innerHTML = '<p class="muted">Erreur lors de la recherche.</p>';
         }
       });
+
+      // Load all friend data on page load
+      loadFriendsData();
     </script>
   `
 }) %>

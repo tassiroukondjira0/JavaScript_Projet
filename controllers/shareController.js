@@ -24,7 +24,7 @@ exports.sharePost = async (req, res) => {
     // Create a shared post
     const shareContent = content ? content : '';
     const sharedPostId = await Post.create({
-      user_id,
+      userId: user_id,
       content: shareContent,
       image: null
     });

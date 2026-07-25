@@ -50,7 +50,7 @@ exports.toggleReaction = async (req, res) => {
           id: notifId,
           type: 'reaction',
           reaction_type: reaction_type,
-          sender_name: (req.session?.user?.fullname) || (senderUser?.fullname) || '',
+          sender_name: (senderUser?.fullname) || (req.session?.user?.fullname) || '',
           sender_picture: senderUser ? senderUser.profile_picture : 'default-avatar.png',
           entity_id: post_id,
           created_at: new Date().toISOString()
@@ -111,6 +111,29 @@ exports.getReactionCounts = async (req, res) => {
     res.status(200).json({ counts, total_count: totalCount });
   } catch (error) {
     console.error('Error getting reaction counts:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des réactions.' });
+  }
+};
+
+exports.getWhoReacted = async (req, res) => {
+  try {
+    const { post_id } = req.query;
+    if (!post_id) {
+      return res.status(400).json({ error: 'ID de publication requis.' });
+    }
+
+    const db = require('../config/db').getDB();
+    const [rows] = await db.execute(
+      `SELECT r.user_id, r.reaction_type, u.fullname, u.profile_picture
+       FROM reactions r
+       JOIN users u ON u.id = r.user_id
+       WHERE r.post_id = ?
+       ORDER BY r.created_at DESC`,
+      [post_id]
+    );
+    res.status(200).json(rows || []);
+  } catch (error) {
+    console.error('Error getting who reacted:', error);
     res.status(500).json({ error: 'Erreur lors de la récupération des réactions.' });
   }
 };

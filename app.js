@@ -155,7 +155,14 @@ async function start() {
 
   // Locals helper
   app.use((req, res, next) => {
-    res.locals.user = req.session?.user || null;
+    const sessionUser = req.session?.user || null;
+    if (sessionUser) {
+      // Ensure is_admin and is_super_admin are computed from the role
+      // so the left nav can show/hide the admin link correctly
+      sessionUser.is_admin = sessionUser.role === 'ADMIN' || sessionUser.role === 'SUPER_ADMIN';
+      sessionUser.is_super_admin = sessionUser.role === 'SUPER_ADMIN';
+    }
+    res.locals.user = sessionUser;
     res.locals.flash = {
       success: req.flash('success'),
       error: req.flash('error')

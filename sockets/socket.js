@@ -56,10 +56,8 @@ function createSocketIO(httpServer, app) {
     const uid = String(userId);
     const set = userSockets.get(uid);
     if (!set || set.size === 0) return false;
-    // Emit to the first available socket (or all, but one is sufficient)
-    const socketId = set.values().next().value;
-    if (!socketId) return false;
-    io.to(socketId).emit(event, data);
+    // Emit to ALL sockets of this user (multi-tab support) via the room
+    io.to(`user-${uid}`).emit(event, data);
     return true;
   }
 

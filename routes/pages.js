@@ -114,7 +114,7 @@ router.get('/notifications', requireLogin, async (req, res) => {
 
 router.get('/activity', requireLogin, async (req, res) => {
   const viewer = await loadUser(req.session.user.id);
-  res.render('notifications/index', { user: viewer });
+  res.render('activity/index', { user: viewer });
 });
 
 // Admin pages
