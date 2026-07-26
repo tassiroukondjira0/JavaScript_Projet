@@ -12,6 +12,7 @@ const TYPE_MAP = {
   'reply': 'NEW_COMMENT',
   'comment_reply': 'NEW_COMMENT',
   'friend_request': 'NEW_FRIEND_REQUEST',
+  'friend_accept': 'NEW_FRIEND_REQUEST',
   'message': 'NEW_MESSAGE',
   // Already valid:
   'NEW_COMMENT': 'NEW_COMMENT',
@@ -61,28 +62,78 @@ async function listNotifications({ userId, limit = 20, offset = 0 }) {
   const db = getDB();
   const l = Math.max(1, Number(limit) || 20);
   const o = Math.max(0, Number(offset) || 0);
-  const [rows] = await db.execute(
+  
+  // Use query() instead of execute() for LIMIT/OFFSET compatibility
+  const [rows] = await db.query(
     `SELECT n.*
      FROM notifications n
      WHERE n.user_id = ?
      ORDER BY n.created_at DESC
-     LIMIT ? OFFSET ?`,
+     LIMIT ?
+     OFFSET ?`,
     [Number(userId), l, o]
   );
 
-  // Parse payload JSON and extract sender info from payload
-  return rows.map(n => {
+  // Parse payload JSON and resolve sender info using a single batch query
+  const result = [];
+  const senderIds = new Set();
+
+  // First pass: parse payloads and collect unique sender IDs
+  for (const n of rows) {
     let payload = {};
     if (n.payload) {
       try { payload = typeof n.payload === 'string' ? JSON.parse(n.payload) : n.payload; } catch (e) {}
     }
-    return {
+    const senderId = payload.sender_id;
+    if (senderId) {
+      senderIds.add(String(senderId));
+    }
+  }
+
+  // Batch resolve all sender names/pictures in one query
+  const senderMap = {};
+  if (senderIds.size > 0) {
+    try {
+      const ids = Array.from(senderIds).map(Number).filter(id => id > 0);
+      if (ids.length > 0) {
+        const placeholders = ids.map(() => '?').join(',');
+        const [userRows] = await db.query(
+          `SELECT id, fullname, profile_picture FROM users WHERE id IN (${placeholders})`,
+          ids
+        );
+        for (const u of (userRows || [])) {
+          senderMap[String(u.id)] = {
+            sender_name: u.fullname,
+            sender_picture: u.profile_picture
+          };
+        }
+      }
+    } catch (e) {
+      console.error('[notificationModel] Error resolving senders batch:', e.message);
+    }
+  }
+
+  // Second pass: build result with enriched data
+  for (const n of rows) {
+    let payload = {};
+    if (n.payload) {
+      try { payload = typeof n.payload === 'string' ? JSON.parse(n.payload) : n.payload; } catch (e) {}
+    }
+
+    const senderId = payload.sender_id;
+    const senderInfo = senderId ? (senderMap[String(senderId)] || {}) : {};
+
+    result.push({
       ...n,
       payload,
-      sender_id: payload.sender_id || null,
-      entity_id: payload.entity_id || null
-    };
-  });
+      sender_id: senderId || null,
+      entity_id: payload.entity_id || null,
+      sender_name: senderInfo.sender_name || null,
+      sender_picture: senderInfo.sender_picture || null
+    });
+  }
+
+  return result;
 }
 
 async function markAllRead({ userId }) {
@@ -96,4 +147,3 @@ async function markAsRead({ userId, notificationId }) {
 }
 
 module.exports = { create, listNotifications, markAllRead, markAsRead };
-

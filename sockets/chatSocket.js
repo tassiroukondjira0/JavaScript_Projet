@@ -11,9 +11,7 @@ function registerChat(io, socketApi) {
       const { conversationId, toUserId } = data || {};
       if (!conversationId || !toUserId) return;
 
-      if (socketApi?.emitToUser) {
-        socketApi.emitToUser(toUserId, 'chat:typing', { conversationId, fromUserId: userId });
-      }
+      io.to(`user-${toUserId}`).emit('chat:typing', { conversationId, fromUserId: userId });
     });
 
     socket.on('chat:send', async (data, cb) => {
@@ -37,7 +35,13 @@ function registerChat(io, socketApi) {
         if (image) msgData.image = image;
         
         await chatModel.addMessage(msgData);
-        await chatModel.markConversationRead({ conversationId: convId, userId: senderId });
+        // markConversationRead is non-blocking: a read-receipt failure should not
+        // prevent the message from being delivered to the client.
+        try {
+          await chatModel.markConversationRead({ conversationId: convId, userId: senderId });
+        } catch (readErr) {
+          console.error('[chat:send] markConversationRead failed (non-blocking):', readErr.message || readErr);
+        }
 
         // Infer other user to deliver socket message
         // Get other user ID from conversation participants
@@ -59,14 +63,40 @@ function registerChat(io, socketApi) {
         // sender echo (used for confirmation, but receiver ignores it)
         socket.emit('chat:message', payload);
 
-        // receiver notify
-        if (other && socketApi?.emitToUser) {
-          socketApi.emitToUser(other, 'chat:message', payload);
+        // receiver notify (broadcast to all sockets via room)
+        if (other) {
+          io.to(`user-${other}`).emit('chat:message', payload);
+
+          // Create notification for the message
+          try {
+            const Notification = require('../models/notificationModel');
+            const User = require('../models/userModel');
+            const senderUser = await User.findById(senderId);
+            const notifId = await Notification.create({
+              receiver_id: other,
+              sender_id: senderId,
+              type: 'message',
+              entity_id: senderId
+            });
+
+            if (notifId) {
+              io.to(`user-${other}`).emit('new_notification', {
+                id: notifId,
+                type: 'message',
+                sender_name: senderUser?.fullname || 'Quelqu\'un',
+                sender_picture: senderUser?.profile_picture || null,
+                entity_id: senderId,
+                created_at: new Date().toISOString()
+              });
+            }
+          } catch (notifErr) {
+            console.error('[chat:send] Notification creation failed (non-blocking):', notifErr.message || notifErr);
+          }
         }
 
         return cb && cb({ ok: true, conversationId: convId });
       } catch (e) {
-        console.error(e);
+        console.error('[chat:send] Error:', e.message || e);
         return cb && cb({ ok: false, error: 'server error' });
       }
     });

@@ -16,32 +16,26 @@
     </section>
 
     <script>
-      async function refresh() {
-        const res = await fetch('/notifications/list');
-        const data = await res.json();
-        const list = document.getElementById('notifications-list-container');
-        if (!list) return;
+      // Wait for main.js to be loaded and loadNotifications to be available
+      function waitForLoadNotifications() {
+        if (typeof window.loadNotifications === 'function') {
+          window.loadNotifications();
 
-        if (!data.notifications || data.notifications.length === 0) {
-          list.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">Aucune notification</p>';
-          return;
+          // Mark all as read button
+          document.getElementById('btnMarkRead')?.addEventListener('click', async () => {
+            await fetch('/api/notifications/read-all', { method: 'PUT' });
+            window.loadNotifications();
+          });
+
+          // Refresh notifications list in real-time when a new notification arrives
+          document.addEventListener('notification_received', function () {
+            window.loadNotifications();
+          });
+        } else {
+          setTimeout(waitForLoadNotifications, 200);
         }
-
-        list.innerHTML = data.notifications.map(n => {
-          const isUnread = n.is_read ? '' : 'unread';
-          return '<div class="notification-item ' + isUnread + '">' +
-            '<div class="notification-info"><div class="notification-text">' +
-            '<strong>' + (n.sender_name || 'Système') + '</strong> — ' + n.type +
-            '</div><div style="font-size: 0.7rem; color: var(--text-muted);">' + new Date(n.created_at).toLocaleString('fr-FR') + '</div></div></div>';
-        }).join('');
       }
-
-      document.getElementById('btnMarkRead')?.addEventListener('click', async () => {
-        await fetch('/notifications/mark-all-read', { method: 'POST' });
-        await refresh();
-      });
-
-      refresh();
+      waitForLoadNotifications();
     </script>
   `
 }) %>

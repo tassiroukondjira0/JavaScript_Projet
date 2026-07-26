@@ -46,9 +46,11 @@
       .replaceAll("'", '&#039;');
   }
 
-  // Listen for online users list
-  if (window.mainSocket) {
-    window.mainSocket.on('online_users_list', (activeIds) => {
+  // Online users list is handled via ensureSocket() below
+  // using a forward reference function so we can attach the listener
+  // once the socket becomes available (either immediately or via polling).
+  function attachOnlineListHandler(sock) {
+    sock.on('online_users_list', (activeIds) => {
       onlineUserIds = activeIds.map(String);
       // Re-render convos to show online status
       if (window.__CHAT_CONVOS_CACHE__) {
@@ -289,6 +291,8 @@
     // so we don't create a second connection that would overwrite the userId registration.
     if (window.mainSocket) {
       socket = window.mainSocket;
+      // Attach online list handler
+      attachOnlineListHandler(socket);
       // Re-register userId
       if (socket.connected) {
         socket.emit('register', userId);
@@ -305,11 +309,38 @@
         socket.emit('register', userId);
       });
     } else {
-      // Fallback: only if main.js hasn't created a socket yet
-      socket = window.io({ transports: ['websocket'] });
-      socket.on('connect', () => {
-        socket.emit('register', userId);
-      });
+      // Fallback: wait for mainSocket instead of creating a second connection
+      // Creating a second socket connection would cause double userId registration,
+      // making the user appear offline to friends when the first socket disconnects.
+      console.warn('[Chat] mainSocket not available yet, waiting...');
+      // Poll for mainSocket to become available
+      var pollInterval = setInterval(function() {
+        if (window.mainSocket) {
+          clearInterval(pollInterval);
+          socket = window.mainSocket;
+          // Attach online list handler
+          attachOnlineListHandler(socket);
+          if (socket.connected) {
+            socket.emit('register', userId);
+            if (window.__CHAT_CONVOS_CACHE__) {
+              renderConversations(window.__CHAT_CONVOS_CACHE__);
+            }
+          } else {
+            socket.once('connect', () => {
+              socket.emit('register', userId);
+              if (window.__CHAT_CONVOS_CACHE__) {
+                renderConversations(window.__CHAT_CONVOS_CACHE__);
+              }
+            });
+          }
+          socket.on('reconnect', () => {
+            socket.emit('register', userId);
+          });
+          registerChatHandlers(socket);
+        }
+      }, 200);
+      // Return a dummy object so calls don't crash
+      return { emit: function() {}, on: function() {}, connected: false };
     }
 
     // Register chat handlers only once - do NOT use off() to avoid removing other listeners
@@ -547,6 +578,63 @@
     socket.emit('chat:typing', { conversationId: activeConversationId, toUserId: otherUserId });
   });
 
+  // Handle ?user=xxx query param to auto-open a conversation
+  function handleStartConvoFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const targetUserId = params.get('user');
+    if (!targetUserId) return;
+    
+    // Wait for convos to load, then find and open the right one
+    const checkAndOpen = setInterval(() => {
+      const convos = window.__CHAT_CONVOS_CACHE__ || [];
+      if (convos.length === 0) return;
+      clearInterval(checkAndOpen);
+      
+      const targetConvo = convos.find(c => String(c.other_user_id) === String(targetUserId));
+      if (targetConvo) {
+        // Find the button for this conversation and click it
+        const buttons = elConvoList.querySelectorAll('button');
+        for (const btn of buttons) {
+          // Check if this button's parent li is for the target conversation
+          const li = btn.closest('li');
+          if (li && li.querySelector('button')) {
+            // Trigger click on the conversation button
+            btn.click();
+            // Clean URL
+            window.history.replaceState({}, '', '/messages');
+            break;
+          }
+        }
+      } else {
+        // Create conversation with this user
+        fetch('/chat/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ otherUserId: targetUserId })
+        }).then(r => r.json()).then(resp => {
+          if (resp.ok) {
+            activeConversationId = resp.conversationId;
+            loadConvos();
+            // After loading, we need to open the conversation
+            setTimeout(() => {
+              const updatedConvos = window.__CHAT_CONVOS_CACHE__ || [];
+              const newConvo = updatedConvos.find(c => String(c.conversation_id) === String(resp.conversationId));
+              if (newConvo) {
+                const buttons = elConvoList.querySelectorAll('button');
+                for (const btn of buttons) {
+                  btn.click();
+                  window.history.replaceState({}, '', '/messages');
+                  break;
+                }
+              }
+            }, 500);
+          }
+        }).catch(() => {});
+      }
+    }, 500);
+  }
+
   // Auto-load convos
   loadConvos();
+  handleStartConvoFromUrl();
 })();

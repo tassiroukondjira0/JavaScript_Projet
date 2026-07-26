@@ -115,6 +115,7 @@ router.get('/notifications', requireLogin, async (req, res) => {
 router.get('/activity', requireLogin, async (req, res) => {
   const viewer = await loadUser(req.session.user.id);
   res.render('activity/index', { user: viewer });
+<<<<<<< HEAD
 });
 
 // Discover users page
@@ -127,6 +128,8 @@ router.get('/users', requireLogin, async (req, res) => {
 router.get('/posts/saved', requireLogin, async (req, res) => {
   const viewer = await loadUser(req.session.user.id);
   res.render('posts/saved', { user: viewer });
+=======
+>>>>>>> 5046fad7d1371710fc0187458e90c5bc0ed06f21
 });
 
 // Admin pages

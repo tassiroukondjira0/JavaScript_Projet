@@ -4,11 +4,11 @@ async function create({ userId, content, image, video, shared_from = null }) {
   const db = getDB();
   const safeContent = (typeof content === 'string') ? content : '';
   const safeImage = (typeof image === 'string' && image.trim() !== '') ? image : null;
+  const safeVideo = (typeof video === 'string' && video.trim() !== '') ? video : null;
   const safeSharedFrom = (typeof shared_from === 'number') ? shared_from : null;
-  // The deployed DB schema does not have a 'video' column; ignore video param.
   const [res] = await db.execute(
-    'INSERT INTO posts (user_id, content, image, shared_from) VALUES (?,?,?,?)',
-    [userId, safeContent, safeImage, safeSharedFrom]
+    'INSERT INTO posts (user_id, content, image, video, shared_from) VALUES (?,?,?,?,?)',
+    [userId, safeContent, safeImage, safeVideo, safeSharedFrom]
   );
   return res.insertId;
 }
@@ -31,7 +31,7 @@ async function update(id, { content, image, video, shared_from }) {
   const values = [];
   if (typeof content !== 'undefined') { fields.push('content = ?'); values.push(content); }
   if (typeof image !== 'undefined') { fields.push('image = ?'); values.push(image); }
-  // video column not in deployed schema, skip it
+  if (typeof video !== 'undefined') { fields.push('video = ?'); values.push(video); }
   if (typeof shared_from !== 'undefined') { fields.push('shared_from = ?'); values.push(shared_from); }
   if (!fields.length) return;
   values.push(id);

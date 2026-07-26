@@ -37,7 +37,7 @@ const user_id = req.user?.userId || req.session?.user?.id || req.user?.id;
         io.to(`user-${post.user_id}`).emit('new_notification', {
           id: notifId,
           type: 'like',
-          sender_name: (req.session?.user?.fullname) || (senderUser?.fullname) || '',
+          sender_name: (senderUser?.fullname) || (req.session?.user?.fullname) || '',
           sender_picture: senderUser ? senderUser.profile_picture : 'default-avatar.png',
           entity_id: post_id,
           created_at: new Date().toISOString()

@@ -122,19 +122,70 @@
           trigger.classList.remove('liked');
         }
       }
-      const summary = document.querySelector('.reaction-summary[data-post="' + postId + '"]');
-      if (summary && data.counts) {
-        const total = data.total_count || 0;
-        if (total > 0) {
+      // Update reaction summary with who reacted
+      await updateReactionSummary(postId, data);
+    } catch(e) {}
+  };
+
+  async function updateReactionSummary(postId, data) {
+    const summary = document.querySelector('.reaction-summary[data-post="' + postId + '"]');
+    if (!summary) return;
+    
+    const total = data.total_count || 0;
+    if (total === 0) {
+      summary.textContent = '';
+      return;
+    }
+    
+    // Fetch who reacted (names)
+    try {
+      const r = await fetch('/api/reactions/who?post_id=' + postId);
+      if (r.ok) {
+        const reactors = await r.json();
+        if (reactors.length > 0) {
+          // Get current user info
+          const currentUserId = window.currentUser?.id;
+          const otherReactors = reactors.filter(rr => String(rr.user_id) !== String(currentUserId));
+          let namesStr = '';
+          
+          if (otherReactors.length === 0) {
+            // Only current user reacted
+            const currentReaction = reactors.find(rr => String(rr.user_id) === String(currentUserId));
+            if (currentReaction) {
+              const emojis = { like: '👍', love: '❤️', haha: '😂', wow: '😮', sad: '😢', angry: '😡' };
+              namesStr = 'Vous' + (emojis[currentReaction.reaction_type] ? ' ' + emojis[currentReaction.reaction_type] : '');
+            }
+          } else {
+            const names = otherReactors.map(rr => rr.fullname || 'Quelqu\'un');
+            // Check if current user also reacted
+            const currentReacted = reactors.some(rr => String(rr.user_id) === String(currentUserId));
+            if (currentReacted) {
+              names.unshift('Vous');
+            }
+            namesStr = names.join(', ');
+          }
+          
+          // Get top emoji for display
+          const emojis = { like: '👍', love: '❤️', haha: '😂', wow: '😮', sad: '😢', angry: '😡' };
+          const topEmoji = Object.keys(data.counts).find(k => data.counts[k] > 0);
+          const emojiStr = topEmoji ? emojis[topEmoji] : '';
+          
+          summary.innerHTML = '<span style="cursor:pointer;" title="' + namesStr + '">' + 
+            emojiStr + ' ' + total + ' réaction' + (total > 1 ? 's' : '') + 
+            ' <span style="font-size: 11px; color: var(--muted);">· ' + namesStr + '</span></span>';
+        } else {
           const emojis = { like: '👍', love: '❤️', haha: '😂', wow: '😮', sad: '😢', angry: '😡' };
           const topEmoji = Object.keys(data.counts).find(k => data.counts[k] > 0);
           summary.textContent = topEmoji ? (emojis[topEmoji] + ' ' + total + ' réaction' + (total > 1 ? 's' : '')) : '';
-        } else {
-          summary.textContent = '';
         }
       }
-    } catch(e) {}
-  };
+    } catch(e) {
+      // Fallback: show only counts
+      const emojis = { like: '👍', love: '❤️', haha: '😂', wow: '😮', sad: '😢', angry: '😡' };
+      const topEmoji = Object.keys(data.counts).find(k => data.counts[k] > 0);
+      summary.textContent = topEmoji ? (emojis[topEmoji] + ' ' + total + ' réaction' + (total > 1 ? 's' : '')) : '';
+    }
+  }
 
   function loadReactionCounts() {
     document.querySelectorAll('.reaction-summary').forEach(el => {

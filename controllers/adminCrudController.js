@@ -12,6 +12,21 @@ async function updateUserRole(req, res) {
   const userId = Number(req.params.userId);
   const role = req.body.role;
   if (!['USER', 'ADMIN', 'SUPER_ADMIN'].includes(role)) return res.status(400).send('Rôle invalide');
+
+  // Prevent modifying SUPER_ADMIN role (except SUPER_ADMIN themselves if allowed, here we block all)
+  const [userRows] = await db.execute('SELECT role FROM users WHERE id=? LIMIT 1', [userId]);
+  if (!userRows || !userRows.length) return res.status(404).send('Utilisateur introuvable');
+  const currentRole = userRows[0].role;
+  if (currentRole === 'SUPER_ADMIN') {
+    return res.status(403).send("Impossible de modifier le rôle du Super Admin");
+  }
+
+  // Prevent ADMIN from changing roles at all, optional extra safety
+  if (req.session && req.session.user && req.session.user.role === 'ADMIN') {
+    // Allow only if target is not SUPER_ADMIN (already blocked above) but block anything else?
+    // For now just keep the SUPER_ADMIN protection, since requireRole already ensures only ADMIN/SUPER_ADMIN can call this
+  }
+
   await db.execute('UPDATE users SET role=? WHERE id=?', [role, userId]);
   return res.redirect('/admin/crud/users');
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # TODO - Implémentation des fonctionnalités manquantes - COMPLETED ✅
 
 ## ✅ Phase 1: i18n complet & Suspension (COMPLETED)
@@ -9,6 +10,21 @@
 - [x] 4. Ajouter modification mot de passe depuis les paramètres
 - [x] 5. Ajouter suppression de compte utilisateur
 - [x] 6. Ajouter préférences (langue, thème) dans les paramètres
+=======
+# TODO - Fix Friends Page & Search Issues ✅ COMPLETE
+
+## Step 1: Update `views/users/search.ejs` ✅
+- [x] Load and display friends list on page load via `GET /api/friends/list`
+- [x] Added search input to filter friends by name client-side
+- [x] Added a separate "Rechercher des utilisateurs" section to search all users
+- [x] Show friend status in search results (friend, pending received, pending sent, add friend)
+- [x] Removed email display from search results
+- [x] Removed unused `isPrivileged` variable
+
+## Step 2: Update `public/js/main.js` ✅
+- [x] Hide email in global search dropdown, only show the user's `fullname`
+- [x] Removed `@${u.id}` fallback display for non-privileged users
+>>>>>>> 5046fad7d1371710fc0187458e90c5bc0ed06f21
 
 ## ✅ Phase 3: Améliorations Posts & Commentaires (COMPLETED)
 - [x] 7. Ajouter route PUT /comments/:id dans l'API
