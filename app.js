@@ -181,12 +181,21 @@ async function start() {
   app.use('/stories', storyRoutes);
   app.use('/notifications', require('./routes/notifications'));
   app.use('/admin/crud', require('./routes/adminCrud'));
+  app.use('/settings', require('./routes/settings'));
 
 
   // Logout quick route
   app.post('/auth/logout', (req, res) => {
     if (req.session) req.session.destroy(() => res.redirect('/'));
     else res.redirect('/');
+  });
+
+  // 404 handler - must be after all routes
+  app.use((req, res) => {
+    res.status(404).render('404', {
+      language: req.language || 'fr',
+      user: req.session?.user || null
+    });
   });
 
 

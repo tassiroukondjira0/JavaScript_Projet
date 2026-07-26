@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const { requireLogin } = require('../middleware/auth');
 const admin = require('../middleware/admin');
+const Friend = require('../models/Friend');
 
 // Helper to check if already logged in, redirects to feed
 const redirectIfLoggedIn = (req, res, next) => {
@@ -85,12 +86,20 @@ router.get('/profile/edit', requireLogin, async (req, res) => {
 router.get('/profile/:id', requireLogin, async (req, res) => {
   const viewer = await loadUser(req.session.user.id);
   const profileUser = await loadUser(Number(req.params.id) || req.session.user.id);
-  res.render('profile/index', { user: viewer, viewer, profileUser });
+  let friendStatus = 'none';
+  if (viewer && profileUser && viewer.id !== profileUser.id) {
+    try {
+      friendStatus = await Friend.getRelation(viewer.id, profileUser.id);
+    } catch (e) {
+      friendStatus = 'none';
+    }
+  }
+  res.render('profile/index', { user: viewer, viewer, profileUser, friendStatus });
 });
 
 router.get('/friends', requireLogin, async (req, res) => {
   const viewer = await loadUser(req.session.user.id);
-  res.render('users/search', { user: viewer });
+  res.render('friends/index', { user: viewer });
 });
 
 router.get('/messages', requireLogin, async (req, res) => {
@@ -105,7 +114,19 @@ router.get('/notifications', requireLogin, async (req, res) => {
 
 router.get('/activity', requireLogin, async (req, res) => {
   const viewer = await loadUser(req.session.user.id);
-  res.render('notifications/index', { user: viewer });
+  res.render('activity/index', { user: viewer });
+});
+
+// Discover users page
+router.get('/users', requireLogin, async (req, res) => {
+  const viewer = await loadUser(req.session.user.id);
+  res.render('users/discover', { user: viewer });
+});
+
+// Saved posts page
+router.get('/posts/saved', requireLogin, async (req, res) => {
+  const viewer = await loadUser(req.session.user.id);
+  res.render('posts/saved', { user: viewer });
 });
 
 // Admin pages

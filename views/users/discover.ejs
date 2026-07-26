@@ -1,0 +1,60 @@
+<% const currentPath = '/users/discover'; %>
+<% const title = 'Découvrir des utilisateurs'; %>
+<%
+  const tAny = (key) => (typeof t === 'function' ? t(key) : key);
+  let bodyHtml = '<main><h2>' + tAny('discoverUsers') + '</h2>';
+
+  bodyHtml += '<div style="margin-bottom:16px;">';
+  bodyHtml += '<input type="text" id="discoverSearch" class="input" placeholder="' + tAny('searchUsersPlaceholder') + '" style="width:100%;box-sizing:border-box;" />';
+  bodyHtml += '</div>';
+
+  bodyHtml += '<section class="card">';
+  bodyHtml += '<div id="discoverList"><p class="muted">' + tAny('loading') + '</p></div>';
+  bodyHtml += '</section>';
+  bodyHtml += '</main>';
+
+  bodyHtml += '<script>';
+  bodyHtml += 'async function loadDiscover(query) {';
+  bodyHtml += 'var url = "/api/users/discover";';
+  bodyHtml += 'if (query && query.trim()) url += "?q=" + encodeURIComponent(query.trim());';
+  bodyHtml += 'try { var res = await fetch(url); var users = await res.json();';
+  bodyHtml += 'var container = document.getElementById("discoverList");';
+  bodyHtml += 'if (!users || users.length === 0) { container.innerHTML = "<p class=\'muted\'>' + tAny('noUsersFound') + '</p>"; return; }';
+  bodyHtml += 'container.innerHTML = "<div style=\'display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;\'>" + users.map(function(u) {';
+  bodyHtml += 'var avatar = u.profile_picture ? "/uploads/" + u.profile_picture : "/images/default-avatar.svg";';
+  bodyHtml += 'var friendBtn = "";';
+  bodyHtml += 'if (u.friend_status === "none") { friendBtn = "<button class=\'btn btn-primary btn-sm add-friend-btn\' data-id=\'" + u.id + "\'>' + tAny('addFriend') + '</button>"; }';
+  bodyHtml += 'else if (u.friend_status === "pending_sent") { friendBtn = "<button class=\'btn btn-sm\' disabled>' + tAny('friendRequestSent') + '</button>"; }';
+  bodyHtml += 'else if (u.friend_status === "accepted") { friendBtn = "<span class=\'muted\' style=\'font-size:13px;\'>✅ ' + tAny('friends') + '</span>"; }';
+  bodyHtml += 'return "<div class=\'card\' style=\'padding:16px;text-align:center;\'>" +';
+  bodyHtml += '"<a href=\'/profile/" + u.id + "\'><img src=\'" + avatar + "\' onerror=\\"this.src=\'/images/default-avatar.svg\'\\" alt=\'avatar\' style=\'width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 auto 8px;display:block;\' /></a>" +';
+  bodyHtml += '"<a href=\'/profile/" + u.id + "\' style=\'font-weight:600;text-decoration:none;color:var(--text);\'>" + u.fullname + "</a>" +';
+  bodyHtml += (u.bio ? "<p class=\'muted\' style=\'font-size:12px;margin:4px 0;\'>" + u.bio.substring(0, 60) + "</p>" : "") +';
+  bodyHtml += '"<div style=\'margin-top:8px;\'>" + friendBtn + "</div></div>";';
+  bodyHtml += '}).join("") + "</div>";';
+
+  bodyHtml += 'document.querySelectorAll(".add-friend-btn").forEach(function(btn) {';
+  bodyHtml += 'btn.addEventListener("click", async function() {';
+  bodyHtml += 'var id = this.dataset.id; this.disabled = true; this.textContent = "' + tAny('sendingFriendRequest') + '";';
+  bodyHtml += 'try { var r = await fetch("/api/friends/request", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ receiver_id: id }) });';
+  bodyHtml += 'var j = await r.json();';
+  bodyHtml += 'if (r.ok) { this.textContent = "' + tAny('friendRequestSent') + '"; } else { this.textContent = j.error || "' + tAny('error') + '"; this.disabled = false; }';
+  bodyHtml += '} catch(e) { this.textContent = "' + tAny('error') + '"; this.disabled = false; }';
+  bodyHtml += '});';
+  bodyHtml += '});';
+  bodyHtml += '} catch(e) { document.getElementById("discoverList").innerHTML = "<p class=\'muted\'>' + tAny('error') + '</p>"; }';
+  bodyHtml += '}';
+
+  bodyHtml += 'document.addEventListener("DOMContentLoaded", function() { loadDiscover(""); });';
+
+  bodyHtml += 'var searchInput = document.getElementById("discoverSearch");';
+  bodyHtml += 'var searchTimeout = null;';
+  bodyHtml += 'if (searchInput) {';
+  bodyHtml += 'searchInput.addEventListener("input", function() {';
+  bodyHtml += 'clearTimeout(searchTimeout);';
+  bodyHtml += 'searchTimeout = setTimeout(function() { loadDiscover(searchInput.value); }, 300);';
+  bodyHtml += '});';
+  bodyHtml += '}';
+  bodyHtml += '</script>';
+%>
+<%- include('../partials/appShell.ejs', { language: language || 'fr', title, user, currentPath, body: bodyHtml }) %>

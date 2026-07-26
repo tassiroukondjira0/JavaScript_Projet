@@ -1,0 +1,13 @@
+<% const currentPath = '/404'; %>
+<% const lang = (typeof language !== 'undefined' && language) ? language : 'fr'; %>
+<%
+  const tAny = (key) => (typeof t === 'function' ? t(key) : key);
+  let bodyHtml = '<main style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;padding:40px 20px;">';
+  bodyHtml += '<div style="font-size:120px;line-height:1;margin-bottom:16px;">🔍</div>';
+  bodyHtml += '<h1 style="font-size:2rem;margin:0 0 8px;">404 - Page introuvable</h1>';
+  bodyHtml += '<p class="muted" style="margin:0 0 24px;">La page que vous cherchez n\'existe pas ou a été déplacée.</p>';
+  bodyHtml += '<a href="/posts" class="btn btn-primary" style="padding:12px 32px;border-radius:12px;text-decoration:none;font-weight:600;">Retour à l\'accueil</a>';
+  bodyHtml += '</main>';
+%>
+<%- include('partials/appShell.ejs', { language: lang, title: '404 - Page introuvable', user: typeof user !== 'undefined' ? user : null, currentPath, body: bodyHtml }); %>
+</write_to_file>

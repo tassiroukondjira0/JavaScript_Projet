@@ -1,0 +1,81 @@
+<%- include('../partials/appShell', {
+  language: language || 'fr',
+  title: 'Journal d\'activité',
+  user,
+  currentPath: '/activity',
+  body: `
+    <section class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <h2 style="margin:0;">Journal d'activité</h2>
+        <span class="muted" style="font-size:13px;">Historique de vos actions récentes</span>
+      </div>
+
+      <div id="activity-list-container" style="margin-top:14px;">
+        <p class="muted" style="text-align:center; padding:24px 0;">Chargement...</p>
+      </div>
+    </section>
+
+    <script>
+      const ACTION_LABELS = {
+        register: { icon: '🎉', text: 'Création de votre compte' },
+        login: { icon: '🔑', text: 'Connexion à votre compte' },
+        password_reset_requested: { icon: '✉️', text: 'Demande de réinitialisation du mot de passe' },
+        password_reset_completed: { icon: '🔒', text: 'Mot de passe modifié' },
+        post_created: { icon: '📝', text: 'Publication créée' },
+        post_updated: { icon: '✏️', text: 'Publication modifiée' },
+        post_deleted: { icon: '🗑️', text: 'Publication supprimée' },
+        comment_created: { icon: '💬', text: 'Commentaire ajouté' },
+        reply_created: { icon: '↩️', text: 'Réponse à un commentaire' },
+        reaction_created: { icon: '👍', text: 'Réaction ajoutée à une publication' },
+        reaction_updated: { icon: '👍', text: 'Réaction modifiée' },
+        reaction_removed: { icon: '👍', text: 'Réaction retirée' },
+        post_shared: { icon: '↗️', text: 'Publication partagée' },
+        message_sent: { icon: '📩', text: 'Message envoyé' },
+        report_created: { icon: '🚩', text: 'Signalement envoyé' },
+        report_moderated: { icon: '🛡️', text: 'Signalement traité' }
+      };
+
+      function timeAgo(dateStr) {
+        const d = new Date(dateStr);
+        const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+        if (diffSec < 60) return "à l'instant";
+        const diffMin = Math.floor(diffSec / 60);
+        if (diffMin < 60) return diffMin + ' min';
+        const diffH = Math.floor(diffMin / 60);
+        if (diffH < 24) return diffH + ' h';
+        const diffD = Math.floor(diffH / 24);
+        if (diffD < 30) return diffD + ' j';
+        return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+
+      async function loadActivity() {
+        const container = document.getElementById('activity-list-container');
+        try {
+          const res = await fetch('/api/activity');
+          if (!res.ok) throw new Error('request failed');
+          const rows = await res.json();
+
+          if (!Array.isArray(rows) || rows.length === 0) {
+            container.innerHTML = '<p class="muted" style="text-align:center; padding:24px 0;">Aucune activité pour le moment.</p>';
+            return;
+          }
+
+          container.innerHTML = rows.map(row => {
+            const meta = ACTION_LABELS[row.action_type] || { icon: '•', text: row.action_type };
+            return '<div style="display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid var(--border);">' +
+              '<div style="width:36px;height:36px;flex:0 0 auto;border-radius:50%;background:rgba(74,124,247,.12);display:flex;align-items:center;justify-content:center;font-size:16px;">' + meta.icon + '</div>' +
+              '<div style="flex:1;min-width:0;">' +
+                '<div style="font-weight:600;font-size:14.5px;">' + meta.text + '</div>' +
+                '<div class="muted" style="font-size:12.5px;margin-top:2px;">' + timeAgo(row.created_at) + '</div>' +
+              '</div>' +
+            '</div>';
+          }).join('');
+        } catch (e) {
+          container.innerHTML = '<p class="muted" style="text-align:center; padding:24px 0;">Erreur lors du chargement de l\\'activité.</p>';
+        }
+      }
+
+      loadActivity();
+    </script>
+  `
+}) %>

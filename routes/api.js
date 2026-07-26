@@ -69,6 +69,7 @@ router.post('/auth/password-reset/confirm', rateLimitOtp({ windowMs: 10 * 60 * 1
 
 router.get('/users/profile/:id', requireLogin, userController.getProfile);
 router.get('/users/search', requireLogin, userController.searchUsers);
+router.get('/users/discover', requireLogin, userController.discoverUsers);
 router.get('/users/me/stats', requireLogin, userController.getUserStats);
 
 
@@ -100,9 +101,16 @@ router.get('/posts/saved', requireLogin, savedPostController.getSavedPosts);
 router.post('/profile/avatar/delete', requireLogin, profileController.deleteAvatar);
 
 // ----------------------------------------------------
+// DATA EXPORT ROUTE
+// ----------------------------------------------------
+const exportController = require('../controllers/exportController');
+router.get('/export/data', requireLogin, exportController.exportMyData);
+
+// ----------------------------------------------------
 // COMMENTS ROUTES
 // ----------------------------------------------------
 router.post('/comments', requireLogin, commentController.createComment);
+router.put('/comments/:id', requireLogin, commentController.updateComment);
 router.delete('/comments/:id', requireLogin, commentController.deleteComment);
 router.get('/comments/post/:postId', requireLogin, commentController.getComments);
 router.get('/comments/:parentId/replies', requireLogin, commentController.getReplies);

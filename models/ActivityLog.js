@@ -25,7 +25,8 @@ class ActivityLog {
       LIMIT ?
     `;
     const db = getDB();
-    return await db.query(sql, [userId, limit]);
+    const [rows] = await db.query(sql, [userId, limit]);
+    return rows;
   }
 
   // For admin: get activities for all users (simple)
@@ -36,7 +37,8 @@ class ActivityLog {
       LIMIT ?
     `;
     const db = getDB();
-    return await db.query(sql, [limit]);
+    const [rows] = await db.query(sql, [limit]);
+    return rows;
   }
 }
 

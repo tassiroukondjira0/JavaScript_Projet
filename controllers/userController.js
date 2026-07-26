@@ -164,4 +164,60 @@ async function searchUsers(req, res) {
   res.json(result);
 }
 
-module.exports = { getMe, getProfile, updateProfile, getUserStats, searchUsers };
+async function discoverUsers(req, res) {
+  const viewerId = req.user?.userId || req.session?.user?.id;
+  const q = (req.query.q || '').trim();
+
+  try {
+    const db = getDB();
+    let rows;
+    if (q) {
+      [rows] = await db.execute(
+        `SELECT id, fullname, email, profile_picture, bio, city, country
+         FROM users
+         WHERE (fullname LIKE ? OR email LIKE ?) AND id != ?
+         ORDER BY created_at DESC
+         LIMIT 50`,
+        [`%${q}%`, `%${q}%`, viewerId]
+      );
+    } else {
+      [rows] = await db.execute(
+        `SELECT id, fullname, email, profile_picture, bio, city, country
+         FROM users
+         WHERE id != ?
+         ORDER BY created_at DESC
+         LIMIT 50`,
+        [viewerId]
+      );
+    }
+
+    // For each user, optionally get friend status
+    const enriched = [];
+    for (const u of rows) {
+      // Check if friend
+      let friendStatus = 'none';
+      if (viewerId) {
+        try {
+          const Friend = require('../models/Friend');
+          friendStatus = await Friend.getRelation(viewerId, u.id);
+        } catch (e) {}
+      }
+      enriched.push({
+        id: u.id,
+        fullname: u.fullname,
+        profile_picture: u.profile_picture,
+        bio: u.bio,
+        establishment: u.city,
+        location: u.country,
+        friend_status: friendStatus
+      });
+    }
+
+    res.json(enriched);
+  } catch (err) {
+    console.error('Error in discoverUsers:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
+
+module.exports = { getMe, getProfile, updateProfile, getUserStats, searchUsers, discoverUsers };

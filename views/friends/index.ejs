@@ -1,0 +1,255 @@
+<%- include('../partials/appShell', {
+  language: language || 'fr',
+  title: 'Amis',
+  user,
+  currentPath: '/friends',
+  body: `
+    <section class="card">
+      <h2 style="margin-top:0;">Amis</h2>
+
+      <div id="friendsTabs" style="display:flex; gap:6px; flex-wrap:wrap; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:16px;">
+        <button class="btn tab-btn active" data-tab="friends">Mes amis <span id="countFriends" class="tab-count"></span></button>
+        <button class="btn tab-btn" data-tab="received">Demandes reçues <span id="countReceived" class="tab-count"></span></button>
+        <button class="btn tab-btn" data-tab="sent">Demandes envoyées <span id="countSent" class="tab-count"></span></button>
+        <button class="btn tab-btn" data-tab="discover">Découvrir</button>
+      </div>
+
+      <div id="tab-friends" class="tab-panel"><p class="muted" style="text-align:center;padding:20px 0;">Chargement...</p></div>
+      <div id="tab-received" class="tab-panel" style="display:none;"><p class="muted" style="text-align:center;padding:20px 0;">Chargement...</p></div>
+      <div id="tab-sent" class="tab-panel" style="display:none;"><p class="muted" style="text-align:center;padding:20px 0;">Chargement...</p></div>
+      <div id="tab-discover" class="tab-panel" style="display:none;">
+        <input id="discoverInput" placeholder="Rechercher par nom..." style="width:100%; box-sizing:border-box; margin-bottom:12px;" />
+        <div id="discoverResults"></div>
+      </div>
+    </section>
+
+    <style>
+      .tab-btn { background:transparent; border:1px solid var(--border); font-size:13.5px; }
+      .tab-btn.active { background:var(--primary); border-color:var(--primary); color:#fff; }
+      .tab-count { opacity:.75; font-weight:700; }
+      .friend-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+      .friend-row:last-child { border-bottom:none; }
+      .friend-row .info { flex:1; min-width:0; }
+      .friend-row .info a { color:inherit; text-decoration:none; font-weight:600; }
+      .friend-row .actions { display:flex; gap:8px; flex:0 0 auto; }
+    </style>
+
+    <script>
+      const currentUserId = window.__DJOKKO_USER__ ? window.__DJOKKO_USER__.id : null;
+      let friendsCache = [], receivedCache = [], sentCache = [];
+
+      function avatarUrl(pic) {
+        return pic ? '/uploads/' + pic : '/images/default-avatar.svg';
+      }
+      function escapeHtml(str) {
+        if (!str) return '';
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+      }
+
+      function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+        document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+        document.getElementById('tab-' + tab).style.display = 'block';
+      }
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      async function loadFriends() {
+        const el = document.getElementById('tab-friends');
+        try {
+          const res = await fetch('/api/friends/list');
+          const data = await res.json();
+          friendsCache = Array.isArray(data) ? data : [];
+          document.getElementById('countFriends').textContent = friendsCache.length ? '(' + friendsCache.length + ')' : '';
+          if (friendsCache.length === 0) {
+            el.innerHTML = '<p class="muted" style="text-align:center;padding:20px 0;">Vous n\\'avez pas encore d\\'amis. Direction l\\'onglet Découvrir !</p>';
+            return;
+          }
+          el.innerHTML = friendsCache.map(f => \`
+            <div class="friend-row">
+              <img src="\${avatarUrl(f.profile_picture)}" alt="avatar" class="avatar avatar-sm" onerror="this.src='/images/default-avatar.svg'" />
+              <div class="info">
+                <a href="/profile/\${f.id}">\${escapeHtml(f.fullname)}</a>
+                \${f.bio ? '<div class="muted" style="font-size:12.5px;">' + escapeHtml(f.bio).slice(0, 60) + '</div>' : ''}
+              </div>
+              <div class="actions">
+                <button class="btn btn-sm unfriend-btn" data-id="\${f.id}">Retirer</button>
+              </div>
+            </div>
+          \`).join('');
+          el.querySelectorAll('.unfriend-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              if (!confirm('Retirer cette personne de vos amis ?')) return;
+              btn.disabled = true;
+              try {
+                const r = await fetch('/api/friends/' + btn.dataset.id, { method: 'DELETE' });
+                if (r.ok) loadFriends(); else btn.disabled = false;
+              } catch (e) { btn.disabled = false; }
+            });
+          });
+        } catch (e) {
+          el.innerHTML = '<p class="muted" style="text-align:center;padding:20px 0;">Erreur lors du chargement.</p>';
+        }
+      }
+
+      async function loadReceived() {
+        const el = document.getElementById('tab-received');
+        try {
+          const res = await fetch('/api/friends/pending');
+          const data = await res.json();
+          receivedCache = Array.isArray(data) ? data : [];
+          const badge = document.getElementById('countReceived');
+          badge.textContent = receivedCache.length ? '(' + receivedCache.length + ')' : '';
+          if (receivedCache.length === 0) {
+            el.innerHTML = '<p class="muted" style="text-align:center;padding:20px 0;">Aucune demande en attente.</p>';
+            return;
+          }
+          el.innerHTML = receivedCache.map(f => \`
+            <div class="friend-row">
+              <img src="\${avatarUrl(f.profile_picture)}" alt="avatar" class="avatar avatar-sm" onerror="this.src='/images/default-avatar.svg'" />
+              <div class="info"><a href="/profile/\${f.user_id}">\${escapeHtml(f.fullname)}</a></div>
+              <div class="actions">
+                <button class="btn btn-primary btn-sm accept-btn" data-id="\${f.user_id}">Accepter</button>
+                <button class="btn btn-sm decline-btn" data-id="\${f.user_id}">Refuser</button>
+              </div>
+            </div>
+          \`).join('');
+          el.querySelectorAll('.accept-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              btn.disabled = true;
+              try {
+                const r = await fetch('/api/friends/respond', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sender_id: btn.dataset.id, accept: true })
+                });
+                if (r.ok) { loadReceived(); loadFriends(); } else btn.disabled = false;
+              } catch (e) { btn.disabled = false; }
+            });
+          });
+          el.querySelectorAll('.decline-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              btn.disabled = true;
+              try {
+                const r = await fetch('/api/friends/respond', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sender_id: btn.dataset.id, accept: false })
+                });
+                if (r.ok) loadReceived(); else btn.disabled = false;
+              } catch (e) { btn.disabled = false; }
+            });
+          });
+        } catch (e) {
+          el.innerHTML = '<p class="muted" style="text-align:center;padding:20px 0;">Erreur lors du chargement.</p>';
+        }
+      }
+
+      async function loadSent() {
+        const el = document.getElementById('tab-sent');
+        try {
+          const res = await fetch('/api/friends/sent');
+          const data = await res.json();
+          sentCache = Array.isArray(data) ? data : [];
+          document.getElementById('countSent').textContent = sentCache.length ? '(' + sentCache.length + ')' : '';
+          if (sentCache.length === 0) {
+            el.innerHTML = '<p class="muted" style="text-align:center;padding:20px 0;">Aucune demande envoyée.</p>';
+            return;
+          }
+          el.innerHTML = sentCache.map(f => \`
+            <div class="friend-row">
+              <img src="\${avatarUrl(f.profile_picture)}" alt="avatar" class="avatar avatar-sm" onerror="this.src='/images/default-avatar.svg'" />
+              <div class="info"><a href="/profile/\${f.user_id}">\${escapeHtml(f.fullname)}</a>
+                <div class="muted" style="font-size:12.5px;">En attente de réponse</div>
+              </div>
+              <div class="actions">
+                <button class="btn btn-sm cancel-btn" data-id="\${f.user_id}">Annuler</button>
+              </div>
+            </div>
+          \`).join('');
+          el.querySelectorAll('.cancel-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              btn.disabled = true;
+              try {
+                const r = await fetch('/api/friends/' + btn.dataset.id, { method: 'DELETE' });
+                if (r.ok) loadSent(); else btn.disabled = false;
+              } catch (e) { btn.disabled = false; }
+            });
+          });
+        } catch (e) {
+          el.innerHTML = '<p class="muted" style="text-align:center;padding:20px 0;">Erreur lors du chargement.</p>';
+        }
+      }
+
+      function relationStatusFor(userId) {
+        if (friendsCache.some(f => Number(f.id) === Number(userId))) return 'accepted';
+        if (receivedCache.some(f => Number(f.user_id) === Number(userId))) return 'pending_received';
+        if (sentCache.some(f => Number(f.user_id) === Number(userId))) return 'pending_sent';
+        return 'none';
+      }
+
+      const discoverInput = document.getElementById('discoverInput');
+      const discoverResults = document.getElementById('discoverResults');
+      discoverInput.addEventListener('input', async () => {
+        const q = discoverInput.value.trim();
+        if (q.length < 2) { discoverResults.innerHTML = ''; return; }
+        try {
+          const res = await fetch('/users/search/api?q=' + encodeURIComponent(q));
+          const data = await res.json();
+          if (!data || data.length === 0) {
+            discoverResults.innerHTML = '<p class="muted" style="text-align:center;padding:20px 0;">Aucun résultat.</p>';
+            return;
+          }
+          discoverResults.innerHTML = data.map(u => {
+            if (Number(u.id) === Number(currentUserId)) return '';
+            const status = relationStatusFor(u.id);
+            let action;
+            if (status === 'accepted') action = '<button class="btn btn-sm" disabled>✅ Amis</button>';
+            else if (status === 'pending_sent') action = '<button class="btn btn-sm" disabled>Demande envoyée</button>';
+            else if (status === 'pending_received') action = '<button class="btn btn-primary btn-sm accept-discover-btn" data-id="' + u.id + '">Accepter</button>';
+            else action = '<button class="btn btn-primary btn-sm add-friend-btn" data-id="' + u.id + '">Ajouter en ami</button>';
+            return '<div class="friend-row">' +
+              '<img src="' + avatarUrl(u.profile_picture) + '" alt="avatar" class="avatar avatar-sm" onerror="this.src=\\'/images/default-avatar.svg\\'" />' +
+              '<div class="info"><a href="/profile/' + u.id + '">' + escapeHtml(u.fullname) + '</a></div>' +
+              '<div class="actions">' + action + '</div>' +
+            '</div>';
+          }).join('');
+
+          discoverResults.querySelectorAll('.add-friend-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              btn.disabled = true; btn.textContent = 'Envoi...';
+              try {
+                const r = await fetch('/api/friends/request', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ receiver_id: btn.dataset.id })
+                });
+                if (r.ok) { btn.textContent = 'Demande envoyée ✓'; loadSent(); }
+                else { const j = await r.json(); btn.textContent = j.error || 'Erreur'; btn.disabled = false; }
+              } catch (e) { btn.textContent = 'Erreur'; btn.disabled = false; }
+            });
+          });
+          discoverResults.querySelectorAll('.accept-discover-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+              btn.disabled = true;
+              try {
+                const r = await fetch('/api/friends/respond', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sender_id: btn.dataset.id, accept: true })
+                });
+                if (r.ok) { btn.textContent = '✅ Amis'; loadFriends(); loadReceived(); }
+                else btn.disabled = false;
+              } catch (e) { btn.disabled = false; }
+            });
+          });
+        } catch (e) {
+          discoverResults.innerHTML = '<p class="muted" style="text-align:center;padding:20px 0;">Erreur lors de la recherche.</p>';
+        }
+      });
+
+      (async function init() {
+        await Promise.all([loadFriends(), loadReceived(), loadSent()]);
+      })();
+    </script>
+  `
+}) %>

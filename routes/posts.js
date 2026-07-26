@@ -202,5 +202,28 @@ router.get('/search/api', async (req, res) => {
   res.json(rows);
 });
 
+// Single post page - must be after search route to avoid conflicts
+router.get('/:id', requireLogin, async (req, res) => {
+  try {
+    const postId = Number(req.params.id);
+    const post = await postModel.findById(postId);
+    if (!post) {
+      return res.status(404).render('404', { language: req.language || 'fr', user: req.session?.user || null });
+    }
+    // Attach user info
+    const db = require('../config/db').getDB();
+    const [users] = await db.execute('SELECT fullname, profile_picture FROM users WHERE id = ?', [post.user_id]);
+    if (users && users.length > 0) {
+      post.fullname = users[0].fullname;
+      post.profile_picture = users[0].profile_picture;
+    }
+    post.images = post.images_json ? JSON.parse(post.images_json).map(x => ({ filename: x })) : [];
+    res.render('posts/single', { post, user: req.session?.user || null, language: req.language || 'fr' });
+  } catch (e) {
+    console.error('Error loading single post:', e);
+    res.status(500).send('Erreur');
+  }
+});
+
 module.exports = router;
 

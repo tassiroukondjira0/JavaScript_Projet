@@ -1,0 +1,125 @@
+<% const currentPath = '/settings'; %>
+<% const title = 'Paramètres'; %>
+<%
+  const tAny = (key) => (typeof t === 'function' ? t(key) : key);
+  const viewer = typeof viewer !== 'undefined' ? viewer : null;
+  const user = typeof user !== 'undefined' ? user : null;
+
+  let bodyHtml = '<main><h2>' + tAny('settingsTitle') + '</h2>';
+
+  bodyHtml += '<div class="settings-container" style="display:flex;flex-direction:column;gap:20px;">';
+
+  // ---- Account Settings Card ----
+  bodyHtml += '<section class="card">';
+  bodyHtml += '<h3>' + tAny('accountSettings') + '</h3>';
+
+  bodyHtml += '<div style="display:flex;gap:24px;margin:16px 0;flex-wrap:wrap;">';
+  bodyHtml += '<div><span class="muted" style="font-size:13px;">' + tAny('emailLabel') + '</span><div style="font-weight:500;">' + (viewer && viewer.email ? viewer.email : '—') + '</div></div>';
+  bodyHtml += '<div><span class="muted" style="font-size:13px;">' + tAny('usernameLabel') + '</span><div style="font-weight:500;">' + (viewer && viewer.username ? viewer.username : '—') + '</div></div>';
+  bodyHtml += '<div><span class="muted" style="font-size:13px;">' + tAny('memberSince') + '</span><div style="font-weight:500;">' + (viewer && viewer.created_at ? new Date(viewer.created_at).toLocaleDateString() : '—') + '</div></div>';
+  bodyHtml += '</div>';
+  bodyHtml += '</section>';
+
+  // ---- Change Password Card ----
+  bodyHtml += '<section class="card">';
+  bodyHtml += '<h3>' + tAny('changePassword') + '</h3>';
+  bodyHtml += '<form id="changePasswordForm" style="margin-top:12px;">';
+  bodyHtml += '<div class="form-group"><label>' + tAny('currentPassword') + '</label><input type="password" name="current_password" class="input" required style="width:100%;box-sizing:border-box;" /></div>';
+  bodyHtml += '<div class="form-group"><label>' + tAny('newPassword') + '</label><input type="password" name="new_password" class="input" required style="width:100%;box-sizing:border-box;" /></div>';
+  bodyHtml += '<div class="form-group"><label>' + tAny('confirmNewPassword') + '</label><input type="password" name="confirm_password" class="input" required style="width:100%;box-sizing:border-box;" /></div>';
+  bodyHtml += '<div id="passwordResult" class="muted" style="margin:8px 0;"></div>';
+  bodyHtml += '<button type="submit" class="btn btn-primary">' + tAny('changePassword') + '</button>';
+  bodyHtml += '</form>';
+  bodyHtml += '</section>';
+
+  // ---- Preferences Card ----
+  bodyHtml += '<section class="card">';
+  bodyHtml += '<h3>' + tAny('preferences') + '</h3>';
+  bodyHtml += '<form id="preferencesForm" style="margin-top:12px;">';
+
+  bodyHtml += '<div class="form-group"><label>' + tAny('languageLabel') + '</label>';
+  bodyHtml += '<select name="preferred_language" class="input" style="width:100%;box-sizing:border-box;">';
+  const currentLang = (viewer && viewer.preferred_language) || 'fr';
+  bodyHtml += '<option value="fr"' + (currentLang === 'fr' ? ' selected' : '') + '>' + tAny('french') + '</option>';
+  bodyHtml += '<option value="en"' + (currentLang === 'en' ? ' selected' : '') + '>' + tAny('english') + '</option>';
+  bodyHtml += '</select></div>';
+
+  bodyHtml += '<div class="form-group"><label>' + tAny('theme') + '</label>';
+  bodyHtml += '<select name="preferred_theme" class="input" style="width:100%;box-sizing:border-box;">';
+  const currentTheme = (viewer && viewer.preferred_theme) || 'dark';
+  bodyHtml += '<option value="dark"' + (currentTheme === 'dark' ? ' selected' : '') + '>' + tAny('darkMode') + '</option>';
+  bodyHtml += '<option value="light"' + (currentTheme === 'light' ? ' selected' : '') + '>' + tAny('lightMode') + '</option>';
+  bodyHtml += '</select></div>';
+
+  bodyHtml += '<div id="preferencesResult" class="muted" style="margin:8px 0;"></div>';
+  bodyHtml += '<button type="submit" class="btn btn-primary">' + tAny('saveProfileChanges') + '</button>';
+  bodyHtml += '</form>';
+  bodyHtml += '</section>';
+
+  // ---- Export Data Card ----
+  bodyHtml += '<section class="card">';
+  bodyHtml += '<h3>' + tAny('exportData') + '</h3>';
+  bodyHtml += '<p class="muted" style="margin:12px 0;">Téléchargez toutes vos données (publications, commentaires, amis, activité).</p>';
+  bodyHtml += '<a href="/api/export/data" class="btn" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;">';
+  bodyHtml += '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ' + tAny('exportData') + '</a>';
+  bodyHtml += '</section>';
+
+  // ---- Delete Account Card ----
+  bodyHtml += '<section class="card" style="border-left:4px solid var(--danger,#e74c3c);">';
+  bodyHtml += '<h3 style="color:var(--danger,#e74c3c);">' + tAny('deleteAccount') + '</h3>';
+  bodyHtml += '<p class="muted" style="margin:12px 0;">' + tAny('deleteAccountWarning') + '</p>';
+  bodyHtml += '<form id="deleteAccountForm">';
+  bodyHtml += '<div class="form-group"><label>' + tAny('passwordLabel') + ' (' + tAny('confirm') + ')</label><input type="password" name="password" class="input" required style="width:100%;box-sizing:border-box;" /></div>';
+  bodyHtml += '<div id="deleteResult" class="muted" style="margin:8px 0;"></div>';
+  bodyHtml += '<button type="submit" class="btn" style="background:var(--danger,#e74c3c);color:#fff;border:none;" onclick="return confirm(\'' + tAny('confirmDeleteAccount') + ' ?\')">' + tAny('deleteAccount') + '</button>';
+  bodyHtml += '</form>';
+  bodyHtml += '</section>';
+
+  bodyHtml += '</div>';
+  bodyHtml += '</main>';
+
+  // JavaScript
+  bodyHtml += '<script>';
+  bodyHtml += 'document.addEventListener("DOMContentLoaded", function() {';
+  bodyHtml += 'var pwForm = document.getElementById("changePasswordForm");';
+  bodyHtml += 'if (pwForm) { pwForm.addEventListener("submit", async function(e) {';
+  bodyHtml += 'e.preventDefault();';
+  bodyHtml += 'var data = { current_password: pwForm.current_password.value, new_password: pwForm.new_password.value, confirm_password: pwForm.confirm_password.value };';
+  bodyHtml += 'var resDiv = document.getElementById("passwordResult");';
+  bodyHtml += 'try { var res = await fetch("/settings/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });';
+  bodyHtml += 'var json = await res.json();';
+  bodyHtml += 'if (res.ok) { resDiv.innerHTML = "<span style=\\"color:var(--success,#27ae60);\\">" + (json.message || "OK") + "</span>"; pwForm.reset(); }';
+  bodyHtml += 'else { resDiv.innerHTML = "<span style=\\"color:var(--danger,#e74c3c);\\">" + (json.error || "Erreur") + "</span>"; }';
+  bodyHtml += '} catch(err) { resDiv.innerHTML = "<span style=\\"color:var(--danger,#e74c3c);\\">Erreur de connexion</span>"; }';
+  bodyHtml += '}); }';
+
+  bodyHtml += 'var prefForm = document.getElementById("preferencesForm");';
+  bodyHtml += 'if (prefForm) { prefForm.addEventListener("submit", async function(e) {';
+  bodyHtml += 'e.preventDefault();';
+  bodyHtml += 'var data = { preferred_language: prefForm.preferred_language.value, preferred_theme: prefForm.preferred_theme.value };';
+  bodyHtml += 'var resDiv = document.getElementById("preferencesResult");';
+  bodyHtml += 'try { var res = await fetch("/settings/preferences", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });';
+  bodyHtml += 'var json = await res.json();';
+  bodyHtml += 'if (res.ok) { resDiv.innerHTML = "<span style=\\"color:var(--success,#27ae60);\\">" + (json.message || "OK") + "</span>"; setTimeout(function() { window.location.reload(); }, 1000); }';
+  bodyHtml += 'else { resDiv.innerHTML = "<span style=\\"color:var(--danger,#e74c3c);\\">" + (json.error || "Erreur") + "</span>"; }';
+  bodyHtml += '} catch(err) { resDiv.innerHTML = "<span style=\\"color:var(--danger,#e74c3c);\\">Erreur de connexion</span>"; }';
+  bodyHtml += '}); }';
+
+  bodyHtml += 'var delForm = document.getElementById("deleteAccountForm");';
+  bodyHtml += 'if (delForm) { delForm.addEventListener("submit", async function(e) {';
+  bodyHtml += 'if (!confirm("' + tAny('confirmDeleteAccount') + ' ?")) { e.preventDefault(); return; }';
+  bodyHtml += 'e.preventDefault();';
+  bodyHtml += 'var data = { password: delForm.password.value };';
+  bodyHtml += 'var resDiv = document.getElementById("deleteResult");';
+  bodyHtml += 'try { var res = await fetch("/settings/delete-account", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });';
+  bodyHtml += 'var json = await res.json();';
+  bodyHtml += 'if (res.ok) { resDiv.innerHTML = "<span style=\\"color:var(--success,#27ae60);\\">" + (json.message || "OK") + "</span>"; setTimeout(function() { window.location.href = "/"; }, 1500); }';
+  bodyHtml += 'else { resDiv.innerHTML = "<span style=\\"color:var(--danger,#e74c3c);\\">" + (json.error || "Erreur") + "</span>"; }';
+  bodyHtml += '} catch(err) { resDiv.innerHTML = "<span style=\\"color:var(--danger,#e74c3c);\\">Erreur de connexion</span>"; }';
+  bodyHtml += '}); }';
+
+  bodyHtml += '});';
+  bodyHtml += '</script>';
+%>
+<%- include('../partials/appShell.ejs', { language: language || 'fr', title, user, currentPath, body: bodyHtml }) %>
+

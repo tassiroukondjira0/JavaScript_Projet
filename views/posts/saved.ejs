@@ -1,0 +1,42 @@
+<% const currentPath = '/posts/saved'; %>
+<% const title = 'Publications sauvegardées'; %>
+<%
+  const tAny = (key) => (typeof t === 'function' ? t(key) : key);
+  let bodyHtml = '<main><h2>' + tAny('savedPosts') + '</h2>';
+
+  bodyHtml += '<section class="card" id="savedPostsSection">';
+  bodyHtml += '<div id="savedPostsList"><p class="muted">' + tAny('loading') + '</p></div>';
+  bodyHtml += '</section>';
+  bodyHtml += '</main>';
+
+  bodyHtml += '<script>';
+  bodyHtml += 'document.addEventListener("DOMContentLoaded", async function() {';
+  bodyHtml += 'try { var res = await fetch("/api/posts/saved"); var posts = await res.json();';
+  bodyHtml += 'var container = document.getElementById("savedPostsList");';
+  bodyHtml += 'if (!posts || posts.length === 0) { container.innerHTML = "<p class=\'muted\'>' + tAny('noSavedPosts') + '</p>"; return; }';
+  bodyHtml += 'container.innerHTML = posts.map(function(p) {';
+  bodyHtml += 'var avatar = p.profile_picture ? "/uploads/" + p.profile_picture : "/images/default-avatar.svg";';
+  bodyHtml += 'return "<article class=\'post\' style=\'padding:12px 0;\'>" +';
+  bodyHtml += '"<div class=\'post-head\'><img src=\'" + avatar + "\' class=\'avatar avatar-sm\' onerror=\\"this.src=\'/images/default-avatar.svg\'\\" />" +';
+  bodyHtml += '"<div><a href=\'/profile/" + p.user_id + "\' class=\'post-user\' style=\'text-decoration:none;\'>" + (p.fullname || "Utilisateur") + "</a>" +';
+  bodyHtml += '"<div class=\'post-date\'>" + (p.created_at ? new Date(p.created_at).toLocaleDateString() : "") + "</div></div></div>" +';
+  bodyHtml += (p.content ? "<div class=\'post-content\'>" + p.content + "</div>" : "") +';
+  bodyHtml += (p.image ? "<img class=\'post-image\' src=\'/uploads/" + p.image + "\' alt=\'image\' />" : "") +';
+  bodyHtml += '"<button class=\'btn btn-sm unsave-btn\' data-id=\'" + p.id + "\' style=\'margin-top:8px;\'>' + tAny('unsave') + '</button>" +';
+  bodyHtml += "</article>"; }).join("");';
+
+  bodyHtml += 'document.querySelectorAll(".unsave-btn").forEach(function(btn) {';
+  bodyHtml += 'btn.addEventListener("click", async function() {';
+  bodyHtml += 'var postId = this.dataset.id;';
+  bodyHtml += 'try { var r = await fetch("/api/posts/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ post_id: postId }) });';
+  bodyHtml += 'var j = await r.json();';
+  bodyHtml += 'if (r.ok && !j.saved) { this.closest("article").remove(); }';
+  bodyHtml += '} catch(e) {}';
+  bodyHtml += '});';
+  bodyHtml += '});';
+
+  bodyHtml += '} catch(e) { document.getElementById("savedPostsList").innerHTML = "<p class=\'muted\'>' + tAny('error') + '</p>"; }';
+  bodyHtml += '});';
+  bodyHtml += '</script>';
+%>
+<%- include('../partials/appShell.ejs', { language: language || 'fr', title, user, currentPath, body: bodyHtml }) %>

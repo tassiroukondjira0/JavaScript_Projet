@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const { randomOtpCode, sha256 } = require('../config/crypto');
 const userModel = require('../models/userModel');
 const otpModel = require('../models/otpModel');
-const activityModel = require('../models/activityModel');
+const { logActivity } = require('../utils/activityLogger');
 const { sendOtp } = require('../config/sendchamp');
 const rateLimitLogin = require('../middleware/rateLimitLogin');
 const jwt = require('../utils/jwt');
@@ -122,7 +122,7 @@ async function registerStep1(req, res) {
   const sent = await sendOtp({ phoneNumber: fullPhone, code, purpose: 'REGISTER' });
   req.session.pendingOtp = { userId: id, purpose: 'REGISTER', code, sent, phone: fullPhone };
 
-  await activityModel.logActivity({ userId: id, action: 'REGISTER_OTP_SENT', metaJson: { email, sent } });
+  await logActivity({ actor_user_id: id, action_type: 'register_otp_sent', entity_type: 'user', entity_id: id, metadata: { email, sent } });
 
   return res.redirect('/auth/otp?purpose=REGISTER');
 }
@@ -157,7 +157,12 @@ async function otpVerify(req, res) {
   const user = await userModel.findById(userId);
   req.session.user = { id: user.id, email: user.email, role: user.role, fullname: user.fullname, profile_picture: user.profile_picture };
 
-  await activityModel.logActivity({ userId, action: 'REGISTERED', metaJson: {} });
+  await logActivity({
+    actor_user_id: userId,
+    action_type: purpose === 'LOGIN' ? 'login' : 'register',
+    entity_type: 'user',
+    entity_id: userId
+  });
 
   const accessToken = jwt.signToken({
     userId: user.id,
@@ -207,6 +212,11 @@ async function loginStep(req, res) {
       return res.status(400).render('auth/login', { error: 'Identifiant incorrect', language: req.language || 'fr' });
     }
 
+    // Vérifier si l'utilisateur est suspendu
+    if (user.status === 'suspended' || user.is_suspended === 1) {
+      return res.status(403).render('auth/login', { error: 'Votre compte a été suspendu. Contactez l\'administration pour plus d\'informations.', language: req.language || 'fr' });
+    }
+
     // Succès : réinitialiser les tentatives
     rateLimitLogin.resetAttempts(req);
 
@@ -235,7 +245,7 @@ async function loginStep(req, res) {
     }
 
     req.session.pendingOtp = { userId: user.id, purpose: 'LOGIN', code, sent };
-    await activityModel.logActivity({ userId: user.id, action: 'LOGIN_OTP_SENT', metaJson: { email, sent } });
+    await logActivity({ actor_user_id: user.id, action_type: 'login_otp_sent', entity_type: 'user', entity_id: user.id, metadata: { email, sent } });
 
     return res.redirect('/auth/otp?purpose=LOGIN');
   } catch (err) {
@@ -263,7 +273,7 @@ async function forgotPassword(req, res) {
 
   const sent = await sendOtp({ phoneNumber: email, code, purpose: 'PASSWORD_RESET' });
   req.session.pendingOtp = { userId: user.id, purpose: 'PASSWORD_RESET', code, sent };
-  await activityModel.logActivity({ userId: user.id, action: 'PASSWORD_RESET_OTP_SENT', metaJson: { email, sent } });
+  await logActivity({ actor_user_id: user.id, action_type: 'password_reset_requested', entity_type: 'user', entity_id: user.id, metadata: { email, sent } });
 
   return res.redirect('/auth/otp?purpose=PASSWORD_RESET');
 }
@@ -289,7 +299,7 @@ async function resetPassword(req, res) {
   await db.execute('UPDATE users SET password=? WHERE id=?', [passwordHash, userId]);
 
   req.session.pendingOtp = null;
-  await activityModel.logActivity({ userId, action: 'PASSWORD_RESET', metaJson: {} });
+  await logActivity({ actor_user_id: userId, action_type: 'password_reset_completed', entity_type: 'user', entity_id: userId });
 
   return res.redirect('/auth/login');
 }
