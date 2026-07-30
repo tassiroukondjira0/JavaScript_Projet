@@ -1,52 +1,57 @@
 <%- include('../partials/appShell', {
   language: language || 'fr',
-<<<<<<< HEAD
   title: 'Journal d\'activité',
-=======
-  title: 'Activité',
->>>>>>> 5046fad7d1371710fc0187458e90c5bc0ed06f21
   user,
   currentPath: '/activity',
   body: `
     <section class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-<<<<<<< HEAD
         <h2 style="margin:0;">Journal d'activité</h2>
         <span class="muted" style="font-size:13px;">Historique de vos actions récentes</span>
       </div>
 
       <div id="activity-list-container" style="margin-top:14px;">
         <p class="muted" style="text-align:center; padding:24px 0;">Chargement...</p>
-=======
-        <h2 style="margin:0;">Activité</h2>
-      </div>
-
-      <div id="activity-list-container">
-        <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">Chargement...</p>
->>>>>>> 5046fad7d1371710fc0187458e90c5bc0ed06f21
       </div>
     </section>
 
     <script>
-<<<<<<< HEAD
-      const ACTION_LABELS = {
-        register: { icon: '🎉', text: 'Création de votre compte' },
-        login: { icon: '🔑', text: 'Connexion à votre compte' },
-        password_reset_requested: { icon: '✉️', text: 'Demande de réinitialisation du mot de passe' },
-        password_reset_completed: { icon: '🔒', text: 'Mot de passe modifié' },
-        post_created: { icon: '📝', text: 'Publication créée' },
-        post_updated: { icon: '✏️', text: 'Publication modifiée' },
-        post_deleted: { icon: '🗑️', text: 'Publication supprimée' },
-        comment_created: { icon: '💬', text: 'Commentaire ajouté' },
-        reply_created: { icon: '↩️', text: 'Réponse à un commentaire' },
-        reaction_created: { icon: '👍', text: 'Réaction ajoutée à une publication' },
-        reaction_updated: { icon: '👍', text: 'Réaction modifiée' },
-        reaction_removed: { icon: '👍', text: 'Réaction retirée' },
-        post_shared: { icon: '↗️', text: 'Publication partagée' },
-        message_sent: { icon: '📩', text: 'Message envoyé' },
-        report_created: { icon: '🚩', text: 'Signalement envoyé' },
-        report_moderated: { icon: '🛡️', text: 'Signalement traité' }
-      };
+      function getActivityLabel(actionType) {
+        const labels = {
+          login: { icon: '🔑', text: 'Connexion à votre compte' },
+          register: { icon: '🎉', text: 'Création de votre compte' },
+          password_reset_requested: { icon: '✉️', text: 'Demande de réinitialisation du mot de passe' },
+          password_reset_completed: { icon: '🔒', text: 'Mot de passe modifié' },
+          post_create: { icon: '📝', text: 'Publication créée' },
+          post: { icon: '📝', text: 'Publication créée' },
+          post_created: { icon: '📝', text: 'Publication créée' },
+          post_update: { icon: '✏️', text: 'Publication modifiée' },
+          post_updated: { icon: '✏️', text: 'Publication modifiée' },
+          post_delete: { icon: '🗑️', text: 'Publication supprimée' },
+          post_deleted: { icon: '🗑️', text: 'Publication supprimée' },
+          comment_create: { icon: '💬', text: 'Commentaire ajouté' },
+          comment: { icon: '💬', text: 'Commentaire ajouté' },
+          comment_created: { icon: '💬', text: 'Commentaire ajouté' },
+          comment_delete: { icon: '🗑️', text: 'Commentaire supprimé' },
+          reply_created: { icon: '↩️', text: 'Réponse à un commentaire' },
+          like: { icon: '❤️', text: 'Réaction ajoutée' },
+          reaction: { icon: '❤️', text: 'Réaction ajoutée' },
+          reaction_created: { icon: '👍', text: 'Réaction ajoutée à une publication' },
+          reaction_updated: { icon: '👍', text: 'Réaction modifiée' },
+          reaction_removed: { icon: '👍', text: 'Réaction retirée' },
+          share: { icon: '🔄', text: 'Publication partagée' },
+          post_shared: { icon: '↗️', text: 'Publication partagée' },
+          friend_request: { icon: '👥', text: "Demande d'ami envoyée" },
+          friend_accept: { icon: '✅', text: "Demande d'ami acceptée" },
+          friend_remove: { icon: '❌', text: 'Ami retiré' },
+          message: { icon: '✉️', text: 'Message envoyé' },
+          message_sent: { icon: '📩', text: 'Message envoyé' },
+          profile_update: { icon: '👤', text: 'Profil mis à jour' },
+          report_created: { icon: '🚩', text: 'Signalement envoyé' },
+          report_moderated: { icon: '🛡️', text: 'Signalement traité' }
+        };
+        return labels[actionType] || { icon: '•', text: actionType || 'Action inconnue' };
+      }
 
       function timeAgo(dateStr) {
         const d = new Date(dateStr);
@@ -74,7 +79,8 @@
           }
 
           container.innerHTML = rows.map(row => {
-            const meta = ACTION_LABELS[row.action_type] || { icon: '•', text: row.action_type };
+            const actionType = row.action_type || row.type || '';
+            const meta = getActivityLabel(actionType);
             return '<div style="display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid var(--border);">' +
               '<div style="width:36px;height:36px;flex:0 0 auto;border-radius:50%;background:rgba(74,124,247,.12);display:flex;align-items:center;justify-content:center;font-size:16px;">' + meta.icon + '</div>' +
               '<div style="flex:1;min-width:0;">' +
@@ -92,17 +98,3 @@
     </script>
   `
 }) %>
-=======
-      // Wait for main.js to be loaded and loadActivity to be available
-      function waitForLoadActivity() {
-        if (typeof window.loadActivity === 'function') {
-          window.loadActivity();
-        } else {
-          setTimeout(waitForLoadActivity, 200);
-        }
-      }
-      waitForLoadActivity();
-    </script>
-  `
-}) %>
->>>>>>> 5046fad7d1371710fc0187458e90c5bc0ed06f21

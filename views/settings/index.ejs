@@ -2,8 +2,8 @@
 <% const title = 'Paramètres'; %>
 <%
   const tAny = (key) => (typeof t === 'function' ? t(key) : key);
-  const viewer = typeof viewer !== 'undefined' ? viewer : null;
-  const user = typeof user !== 'undefined' ? user : null;
+  var viewer = typeof viewer !== 'undefined' ? viewer : null;
+  var user = typeof user !== 'undefined' ? user : null;
 
   let bodyHtml = '<main><h2>' + tAny('settingsTitle') + '</h2>';
 

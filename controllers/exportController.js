@@ -65,4 +65,3 @@ async function exportMyData(req, res) {
 }
 
 module.exports = { exportMyData };
-</write_to_file>

@@ -27,9 +27,9 @@
   bodyHtml += 'else if (u.friend_status === "pending_sent") { friendBtn = "<button class=\'btn btn-sm\' disabled>' + tAny('friendRequestSent') + '</button>"; }';
   bodyHtml += 'else if (u.friend_status === "accepted") { friendBtn = "<span class=\'muted\' style=\'font-size:13px;\'>✅ ' + tAny('friends') + '</span>"; }';
   bodyHtml += 'return "<div class=\'card\' style=\'padding:16px;text-align:center;\'>" +';
-  bodyHtml += '"<a href=\'/profile/" + u.id + "\'><img src=\'" + avatar + "\' onerror=\\"this.src=\'/images/default-avatar.svg\'\\" alt=\'avatar\' style=\'width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 auto 8px;display:block;\' /></a>" +';
+  bodyHtml += '"<a href=\'/profile/" + u.id + "\' onerror=\\"this.src=\'/images/default-avatar.svg\'\\" alt=\'avatar\' style=\'width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 auto 8px;display:block;\' /></a>" +';
   bodyHtml += '"<a href=\'/profile/" + u.id + "\' style=\'font-weight:600;text-decoration:none;color:var(--text);\'>" + u.fullname + "</a>" +';
-  bodyHtml += (u.bio ? "<p class=\'muted\' style=\'font-size:12px;margin:4px 0;\'>" + u.bio.substring(0, 60) + "</p>" : "") +';
+  bodyHtml += '"<p class=\'muted\' style=\'font-size:12px;margin:4px 0;\'>" + (u.bio ? u.bio.substring(0, 60) : "") + "</p>" +';
   bodyHtml += '"<div style=\'margin-top:8px;\'>" + friendBtn + "</div></div>";';
   bodyHtml += '}).join("") + "</div>";';
 

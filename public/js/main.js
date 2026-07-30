@@ -364,12 +364,6 @@ window.loadNotifications = async function loadNotifications() {
           // entity_id for friend_accept = user_id who accepted
           // entity_id for messages = sender_id (chat partner)
           switch (n.type) {
-<<<<<<< HEAD
-            case 'like': icon = '❤️'; text = `${senderName} a aimé votre publication.`; targetUrl = `/#post-${n.entity_id}`; break;
-            case 'comment': icon = '💬'; text = `${senderName} a commenté votre publication.`; targetUrl = `/#post-${n.entity_id}`; break;
-            case 'comment_reply': icon = '💬'; text = `${senderName} a répondu à votre commentaire.`; targetUrl = `/#post-${n.entity_id}`; break;
-            case 'friend_request': icon = '👥'; text = `${senderName} vous a envoyé une demande d'ami.`; targetUrl = '/friends'; break;
-=======
             case 'like':
             case 'reaction':
             case 'NEW_REACTION': icon = '❤️'; text = `${senderName} a aimé votre publication.`; targetUrl = `/posts#post-${n.entity_id}`; break;
@@ -378,7 +372,6 @@ window.loadNotifications = async function loadNotifications() {
             case 'share': icon = '🔄'; text = `${senderName} a partagé votre publication.`; targetUrl = `/posts#post-${n.entity_id}`; break;
             case 'friend_request':
             case 'NEW_FRIEND_REQUEST': icon = '👥'; text = `${senderName} vous a envoyé une demande d'ami.`; targetUrl = '/friends'; break;
->>>>>>> 5046fad7d1371710fc0187458e90c5bc0ed06f21
             case 'friend_accept': icon = '✅'; text = `${senderName} a accepté votre demande d'ami.`; targetUrl = `/profile/${n.entity_id}`; break;
             case 'message':
             case 'NEW_MESSAGE': icon = '✉️'; text = `${senderName} vous a envoyé un message.`; targetUrl = `/messages?user=${n.entity_id}`; break;
@@ -470,7 +463,8 @@ window.loadActivity = async function loadActivity() {
         day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
       });
 
-      switch (a.type) {
+      const actionType = a.action_type || a.type || '';
+      switch (actionType) {
         case 'post_create':
         case 'post':
           icon = '📝';
@@ -577,13 +571,10 @@ async function updateOnlineFriends(activeIds) {
       return;
     }
     const friends = await res.json();
-<<<<<<< HEAD
-=======
     if (!Array.isArray(friends)) {
       console.error('[updateOnlineFriends] Invalid response:', friends);
       return;
     }
->>>>>>> 5046fad7d1371710fc0187458e90c5bc0ed06f21
     const onlineFriends = friends.filter(f => activeIds.map(String).includes(String(f.id)));
 
     if (countBadge) countBadge.textContent = onlineFriends.length;
